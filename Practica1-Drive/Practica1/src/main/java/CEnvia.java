@@ -40,9 +40,10 @@ public class CEnvia {
                 optionMenu = scan.nextInt();
                 
                 switch(optionMenu){
-                    case 1:       
+                    case 1:   
                         enviarArchivo(jf, dir, pto);
                         break;
+                     
                     case 5:
                         System.exit(0);
                         break;
@@ -67,23 +68,31 @@ public class CEnvia {
             String path = f.getAbsolutePath();
             long tam = f.length();
             System.out.println("Preparandose pare enviar archivo "+path+" de "+tam+" bytes\n\n");
+
             DataOutputStream dos = new DataOutputStream(cliente.getOutputStream());
-            DataInputStream dis = new DataInputStream(new FileInputStream(path));
+            DataInputStream dis = new DataInputStream(new FileInputStream(path)); 
+            // ---- BANDERA en 1 ----
+            dos.writeInt(1); 
+            dos.flush();
+            
+            // ---- Informacion del archivo ----
             dos.writeUTF(nombre);
             dos.flush();
             dos.writeLong(tam);
             dos.flush();
+            // -----
             long enviados = 0;
-            int l=0,porcentaje=0;
-            while(enviados<tam){
+            int l=0, porcentaje=0;
+            
+            while(enviados < tam){
                 byte[] b = new byte[1500];
                 l=dis.read(b);
                 System.out.println("enviados: "+l);
                 dos.write(b,0,l);
                 dos.flush();
                 enviados = enviados + l;
-                porcentaje = (int)((enviados*100)/tam);
-                System.out.print("\rEnviado el "+porcentaje+" % del archivo");
+                porcentaje = (int)((enviados * 100) / tam);
+                System.out.print("\rEnviado el "+porcentaje+"% del archivo");
             }//while
             System.out.println("\nArchivo enviado...");
             dis.close();
