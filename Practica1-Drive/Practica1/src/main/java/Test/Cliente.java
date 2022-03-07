@@ -16,14 +16,14 @@ public class Cliente {
      String localParentDir;
      String remoteParentDir;
     
-    File localDir = new File(localParentDir);
-    File[] subFiles = localDir.listFiles();
-    if (subFiles != null && subFiles.length > 0) {
-        for (File item : subFiles) {
-            String remoteFilePath = remoteDirPath + "/" + remoteParentDir + "/" + item.getName();
-            if (remoteParentDir.equals("")) {
-                remoteFilePath = remoteDirPath + "/" + item.getName();
-            }
-        }
-    }
+//    File localDir = new File(localParentDir);
+//    File[] subFiles = localDir.listFiles();
+//    if (subFiles != null && subFiles.length > 0) {
+//        for (File item : subFiles) {
+//            String remoteFilePath = remoteDirPath + "/" + remoteParentDir + "/" + item.getName();
+//            if (remoteParentDir.equals("")) {
+//                remoteFilePath = remoteDirPath + "/" + item.getName();
+//            }
+//        }
+//    }
 }
