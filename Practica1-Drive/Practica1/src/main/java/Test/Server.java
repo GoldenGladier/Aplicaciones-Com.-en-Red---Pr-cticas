@@ -5,6 +5,7 @@
  */
 package Test;
 
+import java.io.File;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.UIManager;
@@ -19,6 +20,9 @@ public class Server {
     public static void main(String[] args) {
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+            String home = System.getProperty("user.home");
+            File file = new File(home+"/Downloads/prueba.txt"); 
+            System.out.println(file+"\n");
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException ex) {
             Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
         }
