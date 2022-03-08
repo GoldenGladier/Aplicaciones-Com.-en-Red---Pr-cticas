@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE jasperTemplate PUBLIC "-//JasperReports//DTD Template//EN" "http://jasperreports.sourceforge.net/dtds/jaspertemplate.dtd">
+
+<jasperTemplate>
+	<style name="Titles" forecolor="#0099FF" backcolor="#FFFFFF" hAlign="Left" fontSize="13" isBold="true"/>
+	<style name="Subtitles" forecolor="#666666" isBold="true" isItalic="false" isUnderline="true"/>
+	<style name="Lines" forecolor="#CCCCCC"/>
+</jasperTemplate>
