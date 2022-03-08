@@ -36,6 +36,7 @@ public class CEnvia {
                 System.out.println("----- Menu -----");
                 System.out.println("1. Subir archivo.");
                 System.out.println("2. Descargar archivo.");
+                System.out.println("3. Subir multiples archivos.");
                 System.out.println("5. Salir.");
                 System.out.println("Seleccione una opción: ");
                 optionMenu = scan.nextInt();
@@ -48,7 +49,9 @@ public class CEnvia {
                     case 2:   
                         descargarArchivo(dir, pto);
                         break;
-                     
+                    case 3:
+                        enviarMultiplesArchivos(jf, dir, pto);
+                        break;
                     case 5:
                         System.exit(0);
                         break;
@@ -105,6 +108,62 @@ public class CEnvia {
             cliente.close();
         }//if        
     }
+    
+    public static void enviarMultiplesArchivos(JFileChooser inputFile, String direction, int port) throws IOException {
+        System.out.println("Abriendo file chooser de seleccion multiple");
+        
+        inputFile.setMultiSelectionEnabled(true);
+        
+        int r = inputFile.showOpenDialog(null);
+        
+        System.out.println("Abierto");
+        if(r==JFileChooser.APPROVE_OPTION){
+            File[] files = inputFile.getSelectedFiles();
+            for(int i = 0; i < files.length; i++){
+                File tempFile = files[i];
+                System.out.println((i+1) + ". " + tempFile.getName() + " - " + tempFile.getPath());
+                
+                
+                Socket cliente = new Socket(direction, port);
+                String nombre = tempFile.getName();
+                String path = tempFile.getAbsolutePath();
+                long tam = tempFile.length();
+                System.out.println("Preparandose pare enviar archivo " + path + " de " + tam + " bytes\n\n");
+
+                DataOutputStream dos = new DataOutputStream(cliente.getOutputStream());
+                DataInputStream dis = new DataInputStream(new FileInputStream(path)); 
+                // ---- BANDERA en 1 ----
+                dos.writeInt(1); 
+                dos.flush();
+
+                // ---- Informacion del archivo ----
+                dos.writeUTF(nombre);
+                dos.flush();
+                dos.writeLong(tam);
+                dos.flush();
+                // -----
+                long enviados = 0;
+                int l=0, porcentaje=0;
+
+                while(enviados < tam){
+                    byte[] b = new byte[1500];
+                    l=dis.read(b);
+                    System.out.println(" Enviados: " + l);
+                    dos.write(b,0,l);
+                    dos.flush();
+                    enviados = enviados + l;
+                    porcentaje = (int)((enviados * 100) / tam);
+                    System.out.print("Enviado el " + porcentaje + "% del archivo");
+                }//while
+                System.out.println("\nSend " + nombre + "... Done.");
+                dis.close();
+                dos.close();
+                cliente.close();                                
+                
+            }//for FILES
+
+        }//if        
+    }    
     
     public static void descargarArchivo(String direction, int port) throws IOException {
         Socket cliente = new Socket(direction, port);
