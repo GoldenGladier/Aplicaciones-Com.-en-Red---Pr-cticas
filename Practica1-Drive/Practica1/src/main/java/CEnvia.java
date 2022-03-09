@@ -43,6 +43,7 @@ public class CEnvia {
                 System.out.println("3. Subir multiples archivos.");
                 System.out.println("x. Crear directorio.");
                 System.out.println("5. Envíar directorio.");
+                System.out.println("6. Eliminar archivo.");
                 System.out.println("10 Salir.");
                 System.out.println("Seleccione una opción: ");
                 optionMenu = scan.nextInt();
@@ -63,6 +64,9 @@ public class CEnvia {
                         break;
                     case 5:
                         enviarDirectorio(jf, dir, pto);
+                        break;
+                    case 6:
+                        //enviarDirectorio(jf, dir, pto);
                         break;
                     case 10:
                         System.exit(0);
@@ -336,6 +340,37 @@ public class CEnvia {
         cliente.close();        
     }
     
+    public static void eliminarArchivo(String direction, int port) throws IOException {
+        Socket cliente = new Socket(direction, port);
+        System.out.println("Abriendo file chooser");
+        
+        // Mostrando los archivos del servidor
+        //Invocar funcion aqui
+
+        
+        File f1 = new File("");
+        String ruta = f1.getAbsolutePath();
+        System.out.println("ruta:"+ruta);
+        
+        String path = ruta + "/" + f1.getName();
+
+            DataOutputStream dos = new DataOutputStream(cliente.getOutputStream());
+            DataInputStream dis = new DataInputStream(new FileInputStream(path)); 
+            // ---- BANDERA en 2 ----
+            dos.writeInt(8); 
+            dos.flush();
+            
+            // ---- Informacion del archivo ----
+            dos.writeUTF(ruta);
+            dos.flush();
+            // -----
+            
+            dis.close();
+            dos.close();
+            cliente.close();   
+    }
+    
+    
     public static void descargarArchivo(String direction, int port) throws IOException {
         Socket cliente = new Socket(direction, port);
         System.out.println("Abriendo file chooser");
@@ -361,7 +396,7 @@ public class CEnvia {
 
             DataOutputStream dos = new DataOutputStream(cliente.getOutputStream());
             DataInputStream dis = new DataInputStream(new FileInputStream(path)); 
-            // ---- BANDERA en 1 ----
+            // ---- BANDERA en 2 ----
             dos.writeInt(2); 
             dos.flush();
             

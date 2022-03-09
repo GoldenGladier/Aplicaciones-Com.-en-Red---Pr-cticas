@@ -230,6 +230,19 @@ public class SRecibe {
         return destFile;
     }    
     
+    private static void eliminarArch_Carp(File archivo) {
+        if (!archivo.exists()){
+            return;
+        }
+
+        if (archivo.isDirectory()) {
+            for (File f : archivo.listFiles()) {
+                eliminarArch_Carp(f);
+            }
+        }
+        archivo.delete();
+    }
+    
     private void menu(){
         System.out.println("1. Subir archivo");
         System.out.println("2. Descargar archivo");

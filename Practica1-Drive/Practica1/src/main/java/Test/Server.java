@@ -23,6 +23,11 @@ public class Server {
             String home = System.getProperty("user.home");
             File file = new File(home+"/Downloads/prueba.txt"); 
             System.out.println(file+"\n");
+            
+            String sep = System.getProperty("file.separator");
+            String rutaServer = "." + sep + "serverP1" + sep;
+            
+            System.out.println(rutaServer+"\n");
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException ex) {
             Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
         }
