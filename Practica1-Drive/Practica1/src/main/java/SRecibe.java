@@ -23,6 +23,8 @@ import javax.swing.JFileChooser;
  * @author Reina
  */
 public class SRecibe {
+    public static String separator = System.getProperty("file.separator");
+    
     public static void main(String[] args){
       try{
           int pto = 8000;
@@ -79,6 +81,23 @@ public class SRecibe {
                       recibeArchivo(size, ruta_archivos + name, dis);
                       UnzipFile(ruta_archivos + name, ruta_archivos);
                       break;
+                  case 4: // Envíar estructura de carpeta (vista)
+                      // Ejecutar funcion #4
+                      
+                      //directoryName = "";
+                      //directoryName = dis.readUTF();
+                      //File f2 = new File(ruta_archivos);
+                      actualizarDirectorioCliente(server, dis, f2);
+                      break;       
+                  case 5: // Envíar estructura de una carpeta especifica (vista)
+                      // Ejecutar funcion #5
+                      
+                      directoryName = "";
+                      directoryName = dis.readUTF();
+                      System.out.println("BUSCANDO LA CARPETA: " + ruta_archivos + separator + directoryName);
+                      File newDirectory = new File(ruta_archivos + separator + directoryName);
+                      actualizarDirectorioCliente(server, dis, newDirectory);
+                      break;                       
                   case 10: // Crear directorio (para uso interno del sistema)
                       // Ejecutar funcion #10
                       directoryName = dis.readUTF();
@@ -230,17 +249,81 @@ public class SRecibe {
         return destFile;
     }    
     
-    private static void eliminarArch_Carp(File archivo) {
-        if (!archivo.exists()){
-            return;
+    public static void actualizarDirectorioCliente(Socket server, DataInputStream dis, File files) throws IOException {        
+        System.out.println("Actualizando info: " + files.getAbsolutePath());
+        File[] list = files.listFiles();
+        
+        DataOutputStream dos = new DataOutputStream(server.getOutputStream()); // OutputStream    
+        dos.writeInt(list.length);
+        dos.flush();
+        
+        int tipo = 0;
+        int bandera = 0;
+        String info = "";
+        String rutaActual = "";
+        
+        System.out.println("---------- ACTUALIZANDO ---------- ");
+        for (File f : list) {
+           
+            if (f.isDirectory()) {
+                tipo = 1;
+                info = separator + f.getName();
+                System.out.println("+ " + separator + f.getName());                
+            } //if
+            else {
+                tipo = 0;
+                info = f.getName();
+                System.out.println(info);
+            } //else  
+            
+            dos.writeUTF(f.getName()); // name
+            dos.flush();
+            dos.writeInt(tipo); // type
+            dos.flush();
+            dos.writeUTF(info); // path
+            dos.flush();            
         }
-
-        if (archivo.isDirectory()) {
-            for (File f : archivo.listFiles()) {
-                eliminarArch_Carp(f);
+        System.out.println("--------------------------------- ");
+        dos.close();
+        
+    }    
+    
+    public static void listarDirectorio(String path, String parent, DataOutputStream dos) throws IOException{
+        File directory = new File(path);
+        String directoryName = directory.getName();
+        int tipo = 0;
+        String info = "";
+        String name = "";
+        
+        if(directory.isDirectory()){
+            File[] files = directory.listFiles();
+            for(File file : files){
+                if(file.isDirectory()){
+                    tipo = 1;
+                    System.out.println("+ " + parent + separator + directoryName + separator + file.getName());                                        
+                }
+                else{
+                    tipo = 0;
+                    System.out.println("- " + parent + separator + directoryName + separator + file.getName());
+                }   
+                
+                info = parent + separator + directoryName + separator + file.getName();
+                name = file.getName();
+                        
+                dos.writeUTF(name); // name
+                dos.flush();
+                dos.writeInt(tipo); // type
+                dos.flush();
+                dos.writeUTF(info); // path
+                dos.flush();       
+                
+//                if(tipo == 1){
+//                    parent = separator + directoryName;
+//                    listarDirectorio(path + separator + file.getName(), parent, dos);
+//                }
             }
         }
-        archivo.delete();
+        
     }
     
     private void menu(){

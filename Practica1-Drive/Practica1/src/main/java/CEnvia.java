@@ -24,6 +24,10 @@ import javax.swing.UIManager;
  * @author Reina
  */
 public class CEnvia {
+    public static String separator = System.getProperty("file.separator");    
+    public static Archivo[] filesServer;
+    public static String globalPathDirectory = "";
+    
     public static void main(String[] args){
         try{
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
@@ -34,6 +38,7 @@ public class CEnvia {
             //Socket cl = new Socket(dir, pto);
             System.out.println("Conexion con servidor establecida... Iniciando Menú...");
             int optionMenu = 0;
+            int directoryIndex;
             Scanner scan = new Scanner (System.in);                            
             
             while(optionMenu != -1){
@@ -41,9 +46,9 @@ public class CEnvia {
                 System.out.println("1. Subir archivo.");
                 System.out.println("2. Descargar archivo.");
                 System.out.println("3. Subir multiples archivos.");
-                System.out.println("x. Crear directorio.");
-                System.out.println("5. Envíar directorio.");
-                System.out.println("6. Eliminar archivo.");
+                System.out.println("4. Envíar directorio.");
+                System.out.println("5. Ver directorio servidor.");
+                System.out.println("6. Ver directorio especifico.");
                 System.out.println("10 Salir.");
                 System.out.println("Seleccione una opción: ");
                 optionMenu = scan.nextInt();
@@ -60,10 +65,19 @@ public class CEnvia {
                         enviarMultiplesArchivos(jf, dir, pto);
                         break;
                     case 4:
-
+                        enviarDirectorio(jf, dir, pto);
                         break;
                     case 5:
-                        enviarDirectorio(jf, dir, pto);
+                        globalPathDirectory = "";
+                        verDirectorios(dir, pto);
+                        break;
+                    case 6:
+                        verDirectorios(dir, pto, globalPathDirectory);
+                        System.out.println("Ingrese el indice del directorio: ");
+                        directoryIndex = scan.nextInt();                        
+                        globalPathDirectory = globalPathDirectory + filesServer[directoryIndex].getPath();
+                        System.out.println("\nPATH ACTUAL: " + globalPathDirectory);                        
+                        verDirectorios(dir, pto, globalPathDirectory);                        
                         break;
                     case 6:
                         //enviarDirectorio(jf, dir, pto);
@@ -297,7 +311,6 @@ public class CEnvia {
         }//if        
     }
     
-
     private static void zipFile(File fileToZip, String fileName, ZipOutputStream zipOut) throws IOException {
         if (fileToZip.isHidden()) {
             return;
@@ -426,6 +439,79 @@ public class CEnvia {
         }//if        
     }
     
+    public static void verDirectorios(String direction, int port) throws IOException {
+        Socket cliente = new Socket(direction, port);                 
+        
+        DataOutputStream dos = new DataOutputStream(cliente.getOutputStream());
+        // ---- BANDERA en 4 ----
+        dos.writeInt(4); 
+        dos.flush();
+        
+        DataInputStream dis = new DataInputStream(cliente.getInputStream());
+        
+        int nFiles = dis.readInt();
+        filesServer = new Archivo[nFiles];
+        
+        System.out.println(" ======== FILES SERVER ========");
+        for(int i = 0; i < nFiles; i++){
+            String name = dis.readUTF();
+            int type = dis.readInt();
+            String path = dis.readUTF();
+            
+            Archivo fileServer = new Archivo(name, path, type);
+            filesServer[i] = fileServer;
+            if(fileServer.type == 0){
+                System.out.println("- " + i + ". " + fileServer.getPath());
+            }
+            else{
+                System.out.println("+ " + i + ". " + fileServer.getPath());
+            }
+            
+        }
+        System.out.println(" ==============================");
+        
+        dis.close();
+        dos.close();
+        cliente.close();
+    }
+    
+    public static void verDirectorios(String direction, int port, String pathDirectory) throws IOException {
+        Socket cliente = new Socket(direction, port);                 
+        
+        DataOutputStream dos = new DataOutputStream(cliente.getOutputStream());
+        // ---- BANDERA en 5 ----
+        dos.writeInt(5); 
+        dos.flush();
+        dos.writeUTF(pathDirectory);
+        dos.flush();
+        
+        DataInputStream dis = new DataInputStream(cliente.getInputStream());
+        
+        int nFiles = dis.readInt();
+        filesServer = new Archivo[nFiles];
+        
+        System.out.println(" ======== FILES SERVER ========");
+        for(int i = 0; i < nFiles; i++){
+            String name = dis.readUTF();
+            int type = dis.readInt();
+            String path = dis.readUTF();
+            
+            Archivo fileServer = new Archivo(name, path, type);
+            filesServer[i] = fileServer;
+            if(fileServer.type == 0){
+                System.out.println("- " + i + ". " + fileServer.getPath());
+            }
+            else{
+                System.out.println("+ " + i + ". " + fileServer.getPath());
+            }
+            
+        }
+        System.out.println(" ==============================");
+        
+        dis.close();
+        dos.close();
+        cliente.close();
+    }
 }
         
 /***********************Copia de seguridad xD**********************************
