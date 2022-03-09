@@ -79,7 +79,7 @@ public class CEnvia {
                         System.out.println("\nPATH ACTUAL: " + globalPathDirectory);                        
                         verDirectorios(dir, pto, globalPathDirectory);                        
                         break;
-                    case 6:
+                    case 7:
                         //enviarDirectorio(jf, dir, pto);
                         break;
                     case 10:
