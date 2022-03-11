@@ -57,7 +57,7 @@ public class SRecibe {
               System.out.println("Option: " + bandera);
                       
               switch(bandera){
-                  case 1:
+                  case 1: //Recibir un archivo
                       // Ejecutar funcion #1
                       size = dis.readLong();
                       System.out.println("Tamaño de archivo: " + size);
@@ -65,12 +65,14 @@ public class SRecibe {
                       System.out.println("Nombre de archivo: " + name);                      
                       recibeArchivo(size, ruta_archivos + name, dis);
                       break;
-                  case 2:
+                  case 2: //Descargar un archivo
                       // Ejecutar funcion #2
-                      size = dis.readLong();
+                      //size = dis.readLong();
                       name = dis.readUTF();
-                      System.out.println("Tamaño de archivo: " + size);                      
-                      mandaArchivo(size, name, dis);
+                      //System.out.println("Tamaño de archivo: " + size); 
+                      File archivoDes = new File(ruta_archivos + separator + name);
+                      System.out.println("Aqui");
+                      mandaArchivo(archivoDes, ruta_archivos, dis);
                       break;
                   case 3: // Recibir zip
                       // Ejecutar funcion #3
@@ -97,7 +99,16 @@ public class SRecibe {
                       System.out.println("BUSCANDO LA CARPETA: " + ruta_archivos + separator + directoryName);
                       File newDirectory = new File(ruta_archivos + separator + directoryName);
                       actualizarDirectorioCliente(server, dis, newDirectory);
-                      break;                       
+                      break;      
+                  case 8: // Eliminar un archivo
+                      // Ejecutar funcion #6
+                      name = dis.readUTF();
+                      //System.out.println("Nombre de archivo: " + name); 
+                      //System.out.println("rutaArch: " + ruta_archivos + separator + name);
+                      File archivoE = new File(ruta_archivos + separator + name);
+                      eliminarArch_Carp(archivoE);
+                      
+                      break;  
                   case 10: // Crear directorio (para uso interno del sistema)
                       // Ejecutar funcion #10
                       directoryName = dis.readUTF();
@@ -170,32 +181,110 @@ public class SRecibe {
         dis.close();        
     }
     
-    public static void mandaArchivo(long size, String nombre, DataInputStream dis) throws FileNotFoundException, IOException{
+    public static void mandaArchivo(File archivo, String pathS, DataInputStream dis) throws FileNotFoundException, IOException{
+        String nombre = archivo.getName();
+        String rutaDestino = dis.readUTF() + separator + nombre;
+        long tam = archivo.length();
+        String path = pathS + separator + nombre;
+        System.out.println("Preparandose pare enviar archivo "+path+" de "+tam+" bytes\n\n");
+
+        DataOutputStream dos = new DataOutputStream(new FileOutputStream(rutaDestino));
+        DataInputStream dis2 = new DataInputStream(new FileInputStream(path)); 
+
+        // ---- Informacion del archivo ----
+        dos.writeLong(tam);
+        dos.flush();   
+        // -----
+        long enviados = 0;
+        int l=0, porcentaje=0;
+
+        while(enviados < tam){
+            byte[] b = new byte[1500];
+            l=dis2.read(b);
+            System.out.println(" enviados: "+l);
+            dos.write(b,0,l);
+            dos.flush();
+            enviados = enviados + l;
+            porcentaje = (int)((enviados * 100) / tam);
+            System.out.print("\rEnviado el "+porcentaje+"% del archivo");
+        }//while
+        System.out.println("\nArchivo " + nombre + " enviado...");
+        dis2.close();
+        dos.close();
+        
+        
+        
+        
+        
         /* long tam = dis.readLong();
         String pathDestino = dis.readUTF();
         nombre = rutaServer + pathDestino; */
         
-        String home = System.getProperty("user.home");
-        String ruta = (home + "/Downloads/" + nombre); 
-        System.out.println("\nSe manda el archivo " + nombre + " con " + size + "bytes");
-        DataOutputStream dos = new DataOutputStream(new FileOutputStream(ruta)); // OutputStream
-
-        long mandados = 0;
-        int n = 0, porciento = 0;
-        byte[] b = new byte[2000];
-
-        while (mandados < size) {
-            n = dis.read(b);
-            dos.write(b, 0, n);
-            dos.flush();
-            mandados += n;
-            porciento = (int) ((mandados * 100) / size);
-            System.out.println("\r Mandando el " + porciento + "% --- " + mandados + "/" + size + " bytes");
-        } // while
-
-        System.out.println("\nArchivo " + nombre + " de tamanio: " + size + " mandado.");
-        dos.close();
-        dis.close();        
+//        if (!archivo.exists()){
+//            return;
+//        }
+//
+//        if (archivo.isDirectory()) {
+//            for (File f : archivo.listFiles()) {
+//                mandaArchivo(f);
+//            }
+//        }
+//        archivo.delete();
+        
+//        String home = System.getProperty("user.home");
+//        String ruta = (home + "/Downloads/" + archivo.getName()); 
+//        long size = archivo.length();
+        //System.out.println("\nSe manda el archivo " + nombre + " con " + size + "bytes");
+        //DataInputStream dis = new DataInputStream(new FileInputStream(path)); 
+        //DataOutputStream dos = new DataOutputStream(new FileOutputStream(ruta)); // OutputStream
+        /////////////////////////////
+//        String rutaDestino = dis.readUTF();
+//        System.out.println("rutaDestino: " + rutaDestino);
+//        
+//        String nombre = archivo.getName();
+//        long tam = archivo.length();
+//        System.out.println("Preparandose pare enviar archivo "+pathS+" de "+tam+" bytes\n\n");
+//
+//        DataOutputStream dos = new DataOutputStream(new FileOutputStream(rutaDestino));
+////        // ---- Informacion del archivo ----
+////        dos.writeLong(tam);
+////        dos.flush();            
+////        dos.writeUTF(nombre);
+////        dos.flush();
+//        // -----
+//        long enviados = 0;
+//        int l=0, porcentaje=0;
+//
+//        while(enviados < tam){
+//            byte[] b = new byte[1500];
+//            l=dis.read(b);
+//            System.out.println(" enviados: "+l);
+//            dos.write(b,0,l);
+//            dos.flush();
+//            enviados = enviados + l;
+//            porcentaje = (int)((enviados * 100) / tam);
+//            System.out.print("\rEnviado el "+porcentaje+"% del archivo");
+//        }//while
+//        System.out.println("\nArchivo " + archivo.getName() + " enviado...");
+//        dis.close();
+//        dos.close();
+        /////////////////////////////////////
+//        long mandados = 0;
+//        int n = 0, porciento = 0;
+//        byte[] b = new byte[2000];
+//
+//        while (mandados < size) {
+//            n = dis.read(b);
+//            dos.write(b, 0, n);
+//            dos.flush();
+//            mandados += n;
+//            porciento = (int) ((mandados * 100) / size);
+//            System.out.println("\r Mandando el " + porciento + "% --- " + mandados + "/" + size + " bytes");
+//        } // while
+//
+//        System.out.println("\nArchivo " + archivo.getName() + " de tamanio: " + size + " mandado.");
+//        dos.close();
+//        dis.close();        
     }
 
     public static void UnzipFile(String ZipPath, String destPath) throws FileNotFoundException, IOException {        
@@ -324,6 +413,19 @@ public class SRecibe {
             }
         }
         
+    }
+    
+    private static void eliminarArch_Carp(File archivo) {
+        if (!archivo.exists()){
+            return;
+        }
+
+        if (archivo.isDirectory()) {
+            for (File f : archivo.listFiles()) {
+                eliminarArch_Carp(f);
+            }
+        }
+        archivo.delete();
     }
     
     private void menu(){

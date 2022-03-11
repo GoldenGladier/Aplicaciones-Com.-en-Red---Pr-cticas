@@ -49,6 +49,7 @@ public class CEnvia {
                 System.out.println("4. Envíar directorio.");
                 System.out.println("5. Ver directorio servidor.");
                 System.out.println("6. Ver directorio especifico.");
+                System.out.println("7. Eliminar archivo/directorio.");
                 System.out.println("10 Salir.");
                 System.out.println("Seleccione una opción: ");
                 optionMenu = scan.nextInt();
@@ -58,8 +59,12 @@ public class CEnvia {
                         enviarArchivo(jf, dir, pto);
                         break;
                         
-                    case 2:   
-                        descargarArchivo(dir, pto);
+                    case 2:
+                        verDirectorios(dir, pto);
+                        System.out.println("Ingrese el indice del archivo/directorio: ");
+                        directoryIndex = scan.nextInt();                        
+                        globalPathDirectory = globalPathDirectory + filesServer[directoryIndex].getPath();
+                        descargarArchivo(dir, pto, globalPathDirectory);
                         break;
                     case 3:
                         enviarMultiplesArchivos(jf, dir, pto);
@@ -80,7 +85,11 @@ public class CEnvia {
                         verDirectorios(dir, pto, globalPathDirectory);                        
                         break;
                     case 7:
-                        //enviarDirectorio(jf, dir, pto);
+                        verDirectorios(dir, pto);
+                        System.out.println("Ingrese el indice del archivo/directorio: ");
+                        directoryIndex = scan.nextInt();                        
+                        globalPathDirectory = globalPathDirectory + filesServer[directoryIndex].getPath();
+                        eliminarArchivo(dir, pto, globalPathDirectory);
                         break;
                     case 10:
                         System.exit(0);
@@ -353,95 +362,167 @@ public class CEnvia {
         cliente.close();        
     }
     
-    public static void eliminarArchivo(String direction, int port) throws IOException {
+    public static void eliminarArchivo(String direction, int port, String nombre) throws IOException {
         Socket cliente = new Socket(direction, port);
-        System.out.println("Abriendo file chooser");
-        
-        // Mostrando los archivos del servidor
-        //Invocar funcion aqui
 
-        
-        File f1 = new File("");
-        String ruta = f1.getAbsolutePath();
-        System.out.println("ruta:"+ruta);
-        
-        String path = ruta + "/" + f1.getName();
+        DataOutputStream dos = new DataOutputStream(cliente.getOutputStream());
+        // ---- BANDERA en 8 ----
+        dos.writeInt(8); 
+        dos.flush();
 
-            DataOutputStream dos = new DataOutputStream(cliente.getOutputStream());
-            DataInputStream dis = new DataInputStream(new FileInputStream(path)); 
-            // ---- BANDERA en 2 ----
-            dos.writeInt(8); 
-            dos.flush();
-            
-            // ---- Informacion del archivo ----
-            dos.writeUTF(ruta);
-            dos.flush();
-            // -----
-            
-            dis.close();
-            dos.close();
-            cliente.close();   
+        // ---- Informacion del archivo ----
+        dos.writeUTF(nombre);
+        dos.flush();
+        // -----
+
+        dos.close();
+        cliente.close();   
     }
     
     
-    public static void descargarArchivo(String direction, int port) throws IOException {
+    public static void descargarArchivo(String direction, int port, String nombre) throws IOException {
+        System.out.println("Entre");
         Socket cliente = new Socket(direction, port);
-        System.out.println("Abriendo file chooser");
-         
-        
-        File f1 = new File("");
-        String ruta = f1.getAbsolutePath();
-        String carpeta="misArchivos";
-        String ruta_archivos = ruta+"\\"+carpeta+"\\";
-        System.out.println("ruta:"+ruta_archivos);
-          
-        JFileChooser inputFile = new JFileChooser(ruta_archivos);
-        int r = inputFile.showOpenDialog(null);
-        
-        System.out.println("Abierto");
-        if(r==JFileChooser.APPROVE_OPTION){
-            File f = inputFile.getSelectedFile();
-            String nombre = f.getName();
-            String path = f.getAbsolutePath();
-            System.out.println("p: "+ path);
-            long tam = f.length();
-            System.out.println("Preparandose pare descargar archivo "+path+" de "+tam+" bytes\n\n");
+        System.out.println("Sigo");
 
-            DataOutputStream dos = new DataOutputStream(cliente.getOutputStream());
-            DataInputStream dis = new DataInputStream(new FileInputStream(path)); 
-            // ---- BANDERA en 2 ----
-            dos.writeInt(2); 
+        String home = System.getProperty("user.home");
+        String rutaDes = (home + separator + "Downloads" + separator + nombre); 
+//        DataOutputStream dos = new DataOutputStream(new FileOutputStream(rutaDes));
+//        DataInputStream dis = new DataInputStream(cliente.getInputStream()); 
+
+        DataOutputStream dos = new DataOutputStream(new FileOutputStream(rutaDes));
+        DataInputStream dis = new DataInputStream(cliente.getInputStream());
+        
+        // ---- BANDERA en 2 ----
+        dos.writeInt(2); 
+        dos.flush();
+        
+        
+        //Informacion del archivo
+        dos.writeUTF(nombre);
+        dos.flush();
+        dos.writeUTF(rutaDes);
+        dos.flush();
+        long size = dis.readLong();
+        
+        
+        System.out.println("\nSe recibe el archivo " + nombre + " con " + size + "bytes");
+
+        long recibidos = 0;
+        int n = 0, porciento = 0;
+        byte[] b = new byte[2000];
+
+        while (recibidos < size) {
+            n = dis.read(b);
+            dos.write(b, 0, n);
             dos.flush();
-            
-            // ---- Informacion del archivo ----
-            dos.writeUTF(nombre);
-            dos.flush();
-            dos.writeLong(tam);
-            dos.flush();
-            // -----
-            long enviados = 0;
-            int l=0, porcentaje=0;
-            
-            while(enviados < tam){
-                byte[] b = new byte[1500];
-                l=dis.read(b);
-                System.out.println(" descargados: "+l);
-                dos.write(b,0,l);
-                dos.flush();
-                enviados = enviados + l;
-                porcentaje = (int)((enviados * 100) / tam);
-                System.out.print("\rDescargando el "+porcentaje+"% del archivo");
-            }//while
-            System.out.println("\nArchivo descargado...");
-            dis.close();
-            dos.close();
-            cliente.close();
-        }//if        
+            recibidos += n;
+            porciento = (int) ((recibidos * 100) / size);
+            System.out.println("\r Recibiendo el " + porciento + "% --- " + recibidos + "/" + size + " bytes");
+        } // while
+
+        System.out.println("\nArchivo " + nombre + " de tamanio: " + size + " recibido.");
+        dos.close();
+        dis.close(); 
+        cliente.close();
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+//        Socket cliente = new Socket(direction, port);
+//
+//        DataOutputStream dos = new DataOutputStream(cliente.getOutputStream());
+//        // ---- BANDERA en 2 ----
+//        dos.writeInt(2); 
+//        dos.flush();
+//
+//        String home = System.getProperty("user.home");
+//        String rutaDes = (home + separator + "Downloads"); 
+//        // ---- Informacion del archivo ----
+//        
+//        dos.writeUTF(nombre);
+//        dos.flush();
+//        dos.writeUTF(rutaDes);
+//        dos.flush();
+//        // -----
+//        dos.close();
+//        cliente.close();
+        
+//*****************************        
+//        DataOutputStream dos = new DataOutputStream(cliente.getOutputStream());
+//        // ---- BANDERA en 2 ----
+//        dos.writeInt(2); 
+//        dos.flush();
+//
+//        // ---- Informacion del archivo ----
+//        dos.writeUTF(nombre);
+//        dos.flush();
+//        // -----
+//
+//        dos.close();
+//        cliente.close(); 
+
+//***********************************************
+        
+//        File f1 = new File("");
+//        String ruta = f1.getAbsolutePath();
+//        String carpeta="misArchivos";
+//        String ruta_archivos = ruta+"\\"+carpeta+"\\";
+//        System.out.println("ruta:"+ruta_archivos);
+//          
+//        JFileChooser inputFile = new JFileChooser(ruta_archivos);
+//        int r = inputFile.showOpenDialog(null);
+//        
+//        System.out.println("Abierto");
+//        if(r==JFileChooser.APPROVE_OPTION){
+//            File f = inputFile.getSelectedFile();
+//            String nombre = f.getName();
+//            String path = f.getAbsolutePath();
+//            System.out.println("p: "+ path);
+//            long tam = f.length();
+//            System.out.println("Preparandose pare descargar archivo "+path+" de "+tam+" bytes\n\n");
+//
+//            DataOutputStream dos = new DataOutputStream(cliente.getOutputStream());
+//            DataInputStream dis = new DataInputStream(new FileInputStream(path)); 
+//            // ---- BANDERA en 2 ----
+//            dos.writeInt(2); 
+//            dos.flush();
+//            
+//            // ---- Informacion del archivo ----
+//            dos.writeUTF(nombre);
+//            dos.flush();
+//            dos.writeLong(tam);
+//            dos.flush();
+//            // -----
+//            long enviados = 0;
+//            int l=0, porcentaje=0;
+//            
+//            while(enviados < tam){
+//                byte[] b = new byte[1500];
+//                l=dis.read(b);
+//                System.out.println(" descargados: "+l);
+//                dos.write(b,0,l);
+//                dos.flush();
+//                enviados = enviados + l;
+//                porcentaje = (int)((enviados * 100) / tam);
+//                System.out.print("\rDescargando el "+porcentaje+"% del archivo");
+//            }//while
+//            System.out.println("\nArchivo descargado...");
+//            dis.close();
+//            dos.close();
+//            cliente.close();
+//        }//if        
     }
     
     public static void verDirectorios(String direction, int port) throws IOException {
-        Socket cliente = new Socket(direction, port);                 
-        
+        Socket cliente = new Socket(direction, port);     
         DataOutputStream dos = new DataOutputStream(cliente.getOutputStream());
         // ---- BANDERA en 4 ----
         dos.writeInt(4); 
@@ -451,7 +532,6 @@ public class CEnvia {
         
         int nFiles = dis.readInt();
         filesServer = new Archivo[nFiles];
-        
         System.out.println(" ======== FILES SERVER ========");
         for(int i = 0; i < nFiles; i++){
             String name = dis.readUTF();
@@ -467,9 +547,9 @@ public class CEnvia {
                 System.out.println("+ " + i + ". " + fileServer.getPath());
             }
             
+            
         }
         System.out.println(" ==============================");
-        
         dis.close();
         dos.close();
         cliente.close();
