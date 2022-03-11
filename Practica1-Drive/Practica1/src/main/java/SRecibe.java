@@ -10,6 +10,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 import javax.swing.JFileChooser;
 
 /*
@@ -52,6 +53,7 @@ public class SRecibe {
               Socket server = s.accept();
               System.out.println("Cliente conectado desde "+server.getInetAddress()+":"+server.getPort());
               DataInputStream dis = new DataInputStream(server.getInputStream());
+              DataOutputStream dos = new DataOutputStream(server.getOutputStream()); //OutputStream
               
               bandera = dis.readInt();
               System.out.println("Option: " + bandera);
@@ -69,10 +71,13 @@ public class SRecibe {
                       // Ejecutar funcion #2
                       //size = dis.readLong();
                       name = dis.readUTF();
+                      System.out.println("SOLICITUD DE DESCARGA: " + name);
                       //System.out.println("Tamaño de archivo: " + size); 
-                      File archivoDes = new File(ruta_archivos + separator + name);
-                      System.out.println("Aqui");
-                      mandaArchivo(archivoDes, ruta_archivos, dis);
+                      File archivoDes = new File(ruta_archivos + name); // ya viene con separador
+                      System.out.println("--> " + archivoDes.getAbsolutePath());
+                      //System.out.println("Aqui");
+                      
+                      mandaArchivo(archivoDes, ruta_archivos, dos);
                       break;
                   case 3: // Recibir zip
                       // Ejecutar funcion #3
@@ -103,11 +108,10 @@ public class SRecibe {
                   case 8: // Eliminar un archivo
                       // Ejecutar funcion #6
                       name = dis.readUTF();
-                      //System.out.println("Nombre de archivo: " + name); 
-                      //System.out.println("rutaArch: " + ruta_archivos + separator + name);
+                      System.out.println("Borrar: " + ruta_archivos + separator + name);
                       File archivoE = new File(ruta_archivos + separator + name);
                       eliminarArch_Carp(archivoE);
-                      
+                      name = "";
                       break;  
                   case 10: // Crear directorio (para uso interno del sistema)
                       // Ejecutar funcion #10
@@ -123,29 +127,6 @@ public class SRecibe {
                         }                      
                       break;
               }
-//              String nombre = dis.readUTF();
-//              long tam = dis.readLong();
-//              
-//              File f3 = new File(nombre);
-//              if(f3.isDirectory())
-//                  System.out.println("Hola soy un directorio\n");
-//                  
-//              System.out.println("Comienza descarga del archivo "+nombre+" de "+tam+" bytes\n\n");
-//              DataOutputStream dos = new DataOutputStream(new FileOutputStream(ruta_archivos+nombre));
-//              long recibidos=0;
-//              int l=0, porcentaje=0;
-//              while(recibidos<tam){
-//                  byte[] b = new byte[1500];
-//                  l = dis.read(b);
-//                  System.out.println("leidos: "+l);
-//                  dos.write(b,0,l);
-//                  dos.flush();
-//                  recibidos = recibidos + l;
-//                  porcentaje = (int)((recibidos*100)/tam);
-//                  System.out.print("\rRecibido el "+ porcentaje +" % del archivo");
-//              }//while
-//              System.out.println("Archivo recibido..");
-              //dos.close();
               dis.close();
               server.close();
           }//for
@@ -181,112 +162,88 @@ public class SRecibe {
         dis.close();        
     }
     
-    public static void mandaArchivo(File archivo, String pathS, DataInputStream dis) throws FileNotFoundException, IOException{
+    public static void mandaArchivo(File archivo, String pathS, DataOutputStream dos) throws FileNotFoundException, IOException{
         String nombre = archivo.getName();
-        String rutaDestino = dis.readUTF() + separator + nombre;
-        long tam = archivo.length();
-        String path = pathS + separator + nombre;
-        System.out.println("Preparandose pare enviar archivo "+path+" de "+tam+" bytes\n\n");
-
-        DataOutputStream dos = new DataOutputStream(new FileOutputStream(rutaDestino));
-        DataInputStream dis2 = new DataInputStream(new FileInputStream(path)); 
-
+        //String rutaDestino = dis.readUTF() + separator + nombre;
+        long tam = 0;
+        int zip = 0;
+        if(archivo.isDirectory()){
+            zip = 1;
+            String pathZipDirectory = archivo.getParent() + "/" + archivo.getName() + ".zip";
+            System.out.println("ZIP: " + pathZipDirectory);
+            FileOutputStream fos = new FileOutputStream(pathZipDirectory);
+            ZipOutputStream zipOut = new ZipOutputStream(fos);    
+            zipFile(archivo, archivo.getName(), zipOut);
+            zipOut.close();                       
+            fos.close();
+            
+            archivo = new File(pathZipDirectory);
+        }
+        
+        tam = archivo.length();
+        //String path = pathS + separator + nombre;
+        System.out.println("Preparandose pare enviar archivo " + nombre + " de " + tam + " bytes\n\n");
+        
         // ---- Informacion del archivo ----
         dos.writeLong(tam);
         dos.flush();   
-        // -----
+        // ----- ----- ----- ----- ----- ---
+        
+        DataInputStream disArchivo = new DataInputStream(new FileInputStream(archivo.getAbsolutePath())); // InputStream
+        
         long enviados = 0;
         int l=0, porcentaje=0;
 
         while(enviados < tam){
             byte[] b = new byte[1500];
-            l=dis2.read(b);
-            System.out.println(" enviados: "+l);
-            dos.write(b,0,l);
+            l = disArchivo.read(b);
+            //System.out.println(" enviados: "+l);
+            dos.write(b, 0, l);
             dos.flush();
-            enviados = enviados + l;
+            enviados += l;
             porcentaje = (int)((enviados * 100) / tam);
             System.out.print("\rEnviado el "+porcentaje+"% del archivo");
         }//while
-        System.out.println("\nArchivo " + nombre + " enviado...");
-        dis2.close();
+        System.out.println("\nArchivo " + nombre + " enviado...");                
+        
+        disArchivo.close();
         dos.close();
         
-        
-        
-        
-        
-        /* long tam = dis.readLong();
-        String pathDestino = dis.readUTF();
-        nombre = rutaServer + pathDestino; */
-        
-//        if (!archivo.exists()){
-//            return;
-//        }
-//
-//        if (archivo.isDirectory()) {
-//            for (File f : archivo.listFiles()) {
-//                mandaArchivo(f);
-//            }
-//        }
-//        archivo.delete();
-        
-//        String home = System.getProperty("user.home");
-//        String ruta = (home + "/Downloads/" + archivo.getName()); 
-//        long size = archivo.length();
-        //System.out.println("\nSe manda el archivo " + nombre + " con " + size + "bytes");
-        //DataInputStream dis = new DataInputStream(new FileInputStream(path)); 
-        //DataOutputStream dos = new DataOutputStream(new FileOutputStream(ruta)); // OutputStream
-        /////////////////////////////
-//        String rutaDestino = dis.readUTF();
-//        System.out.println("rutaDestino: " + rutaDestino);
-//        
-//        String nombre = archivo.getName();
-//        long tam = archivo.length();
-//        System.out.println("Preparandose pare enviar archivo "+pathS+" de "+tam+" bytes\n\n");
-//
-//        DataOutputStream dos = new DataOutputStream(new FileOutputStream(rutaDestino));
-////        // ---- Informacion del archivo ----
-////        dos.writeLong(tam);
-////        dos.flush();            
-////        dos.writeUTF(nombre);
-////        dos.flush();
-//        // -----
-//        long enviados = 0;
-//        int l=0, porcentaje=0;
-//
-//        while(enviados < tam){
-//            byte[] b = new byte[1500];
-//            l=dis.read(b);
-//            System.out.println(" enviados: "+l);
-//            dos.write(b,0,l);
-//            dos.flush();
-//            enviados = enviados + l;
-//            porcentaje = (int)((enviados * 100) / tam);
-//            System.out.print("\rEnviado el "+porcentaje+"% del archivo");
-//        }//while
-//        System.out.println("\nArchivo " + archivo.getName() + " enviado...");
-//        dis.close();
-//        dos.close();
-        /////////////////////////////////////
-//        long mandados = 0;
-//        int n = 0, porciento = 0;
-//        byte[] b = new byte[2000];
-//
-//        while (mandados < size) {
-//            n = dis.read(b);
-//            dos.write(b, 0, n);
-//            dos.flush();
-//            mandados += n;
-//            porciento = (int) ((mandados * 100) / size);
-//            System.out.println("\r Mandando el " + porciento + "% --- " + mandados + "/" + size + " bytes");
-//        } // while
-//
-//        System.out.println("\nArchivo " + archivo.getName() + " de tamanio: " + size + " mandado.");
-//        dos.close();
-//        dis.close();        
+        if(zip == 1){
+            eliminarArch_Carp(archivo);
+            zip = 0;
+        }
     }
 
+    private static void zipFile(File fileToZip, String fileName, ZipOutputStream zipOut) throws IOException {
+        if (fileToZip.isHidden()) {
+            return;
+        }
+        if (fileToZip.isDirectory()) {
+            if (fileName.endsWith("/")) {
+                zipOut.putNextEntry(new ZipEntry(fileName));
+                zipOut.closeEntry();
+            } else {
+                zipOut.putNextEntry(new ZipEntry(fileName + "/"));
+                zipOut.closeEntry();
+            }
+            File[] children = fileToZip.listFiles();
+            for (File childFile : children) {
+                zipFile(childFile, fileName + "/" + childFile.getName(), zipOut);
+            }
+            return;
+        }
+        FileInputStream fis = new FileInputStream(fileToZip);
+        ZipEntry zipEntry = new ZipEntry(fileName);
+        zipOut.putNextEntry(zipEntry);
+        byte[] bytes = new byte[1024];
+        int length;
+        while ((length = fis.read(bytes)) >= 0) {
+            zipOut.write(bytes, 0, length);
+        }
+        fis.close();
+    }   
+    
     public static void UnzipFile(String ZipPath, String destPath) throws FileNotFoundException, IOException {        
         File destDir = new File(destPath);
         byte[] buffer = new byte[1024];

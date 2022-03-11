@@ -3,12 +3,14 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.util.Scanner;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 import javax.swing.JFileChooser;
 import javax.swing.UIManager;
@@ -44,12 +46,14 @@ public class CEnvia {
             while(optionMenu != -1){
                 System.out.println("----- Menu -----");
                 System.out.println("1. Subir archivo.");
-                System.out.println("2. Descargar archivo.");
-                System.out.println("3. Subir multiples archivos.");
-                System.out.println("4. Envíar directorio.");
-                System.out.println("5. Ver directorio servidor.");
-                System.out.println("6. Ver directorio especifico.");
-                System.out.println("7. Eliminar archivo/directorio.");
+                System.out.println("2. Subir multiples archivos.");
+                System.out.println("3. Subir directorio.");
+                
+                System.out.println("4. Descargar archivo/directorio (servidor).");                
+                
+                System.out.println("5. Ver directorio principal (servidor).");
+                System.out.println("6. Entrar a directorio (servidor).");
+                System.out.println("7. Eliminar archivo/directorio (servidor).");
                 System.out.println("10 Salir.");
                 System.out.println("Seleccione una opción: ");
                 optionMenu = scan.nextInt();
@@ -60,17 +64,16 @@ public class CEnvia {
                         break;
                         
                     case 2:
-                        verDirectorios(dir, pto);
-                        System.out.println("Ingrese el indice del archivo/directorio: ");
-                        directoryIndex = scan.nextInt();                        
-                        globalPathDirectory = globalPathDirectory + filesServer[directoryIndex].getPath();
-                        descargarArchivo(dir, pto, globalPathDirectory);
+                        enviarMultiplesArchivos(jf, dir, pto);                        
                         break;
                     case 3:
-                        enviarMultiplesArchivos(jf, dir, pto);
+                        enviarDirectorio(jf, dir, pto);
                         break;
                     case 4:
-                        enviarDirectorio(jf, dir, pto);
+                        verDirectorios(dir, pto, globalPathDirectory); // Para mostrar archivos de la ruta actual
+                        System.out.println("Ingrese el indice del archivo/directorio: ");
+                        directoryIndex = scan.nextInt();                        
+                        descargarArchivo(dir, pto, globalPathDirectory, filesServer[directoryIndex].getName(), filesServer[directoryIndex].getType());                        
                         break;
                     case 5:
                         globalPathDirectory = "";
@@ -85,11 +88,11 @@ public class CEnvia {
                         verDirectorios(dir, pto, globalPathDirectory);                        
                         break;
                     case 7:
-                        verDirectorios(dir, pto);
+                        verDirectorios(dir, pto, globalPathDirectory);
                         System.out.println("Ingrese el indice del archivo/directorio: ");
                         directoryIndex = scan.nextInt();                        
-                        globalPathDirectory = globalPathDirectory + filesServer[directoryIndex].getPath();
-                        eliminarArchivo(dir, pto, globalPathDirectory);
+                        //globalPathDirectory = globalPathDirectory + separator + filesServer[directoryIndex].getPath();
+                        eliminarArchivo(dir, pto, globalPathDirectory + separator + filesServer[directoryIndex].getPath());
                         break;
                     case 10:
                         System.exit(0);
@@ -315,8 +318,10 @@ public class CEnvia {
             System.out.println("\nArchivo enviado...");
             dis.close();
             dos.close();
-            cliente.close();            
-            
+            cliente.close();    
+                        
+            eliminarArch_Carp(f);
+                        
         }//if        
     }
     
@@ -349,6 +354,59 @@ public class CEnvia {
         fis.close();
     }
     
+    public static void UnzipFile(String ZipPath, String destPath) throws FileNotFoundException, IOException {        
+        File destDir = new File(destPath);
+        byte[] buffer = new byte[1024];
+        ZipInputStream zis = new ZipInputStream(new FileInputStream(ZipPath));
+        ZipEntry zipEntry = zis.getNextEntry();
+        while (zipEntry != null) {
+             File newFile = newFile(destDir, zipEntry);
+             if (zipEntry.isDirectory()) {
+                 if (!newFile.isDirectory() && !newFile.mkdirs()) {
+                     throw new IOException("Failed to create directory " + newFile);
+                 }
+             } else {
+                 // fix for Windows-created archives
+                 File parent = newFile.getParentFile();
+                 if (!parent.isDirectory() && !parent.mkdirs()) {
+                     throw new IOException("Failed to create directory " + parent);
+                 }
+
+                 // write file content
+                 FileOutputStream fos = new FileOutputStream(newFile);
+                 int len;
+                 while ((len = zis.read(buffer)) > 0) {
+                     fos.write(buffer, 0, len);
+                 }
+                 fos.close();
+             }
+         zipEntry = zis.getNextEntry();
+        }           
+        zis.closeEntry();
+        zis.close();
+        System.out.println(destDir.getName() + " descomprimido...");
+        File fichero = new File(ZipPath);
+        System.out.println("ZIP PATH: " + ZipPath);
+        if (fichero.delete())
+           System.out.println("El fichero ha sido borrado satisfactoriamente");
+        else
+           System.out.println("El fichero no puede ser borrado --> " + fichero.getPath());        
+    }    
+    
+    public static File newFile(File destinationDir, ZipEntry zipEntry) throws IOException {
+        File destFile = new File(destinationDir, zipEntry.getName());
+
+        String destDirPath = destinationDir.getCanonicalPath();
+        String destFilePath = destFile.getCanonicalPath();
+
+        if (!destFilePath.startsWith(destDirPath + File.separator)) {
+            throw new IOException("Entry is outside of the target dir: " + zipEntry.getName());
+        }
+
+        return destFile;
+    }     
+    
+    
     public static void crearDirectorio(String directoryName, String direction, int port) throws IOException {
         Socket cliente = new Socket(direction, port);
         DataOutputStream dos = new DataOutputStream(cliente.getOutputStream());
@@ -380,145 +438,62 @@ public class CEnvia {
     }
     
     
-    public static void descargarArchivo(String direction, int port, String nombre) throws IOException {
+    public static void descargarArchivo(String direction, int port, String pathArchivo, String nameFile, int type) throws IOException {
         System.out.println("Entre");
         Socket cliente = new Socket(direction, port);
-        System.out.println("Sigo");
+        pathArchivo += separator + nameFile;
+        System.out.println("Quiero descargar: " + pathArchivo);
 
         String home = System.getProperty("user.home");
-        String rutaDes = (home + separator + "Downloads" + separator + nombre); 
-//        DataOutputStream dos = new DataOutputStream(new FileOutputStream(rutaDes));
-//        DataInputStream dis = new DataInputStream(cliente.getInputStream()); 
-
-        DataOutputStream dos = new DataOutputStream(new FileOutputStream(rutaDes));
+        String rutaDes;
+        if(type == 1){
+            rutaDes = (home + separator + "Downloads" + separator + nameFile + ".zip"); 
+        }
+        else{
+            rutaDes = (home + separator + "Downloads" + separator + nameFile);                        
+        }            
+        System.out.println("Recibire el archivo en: " + rutaDes);
+        
+        DataOutputStream dos = new DataOutputStream(cliente.getOutputStream());
         DataInputStream dis = new DataInputStream(cliente.getInputStream());
+        
+        DataOutputStream dosArchivo = new DataOutputStream(new FileOutputStream(rutaDes)); // OutputStream 
         
         // ---- BANDERA en 2 ----
         dos.writeInt(2); 
         dos.flush();
         
         
-        //Informacion del archivo
-        dos.writeUTF(nombre);
+        // ---- Informacion del archivo ----
+        dos.writeUTF(pathArchivo);
         dos.flush();
-        dos.writeUTF(rutaDes);
-        dos.flush();
-        long size = dis.readLong();
         
+        long sizeFile = 0;
+        sizeFile = dis.readLong();
+        System.out.println("Pesa: " + sizeFile + " bytes");
         
-        System.out.println("\nSe recibe el archivo " + nombre + " con " + size + "bytes");
-
         long recibidos = 0;
         int n = 0, porciento = 0;
         byte[] b = new byte[2000];
 
-        while (recibidos < size) {
+        while (recibidos < sizeFile) {
             n = dis.read(b);
-            dos.write(b, 0, n);
-            dos.flush();
+            dosArchivo.write(b, 0, n);
+            dosArchivo.flush();
             recibidos += n;
-            porciento = (int) ((recibidos * 100) / size);
-            System.out.println("\r Recibiendo el " + porciento + "% --- " + recibidos + "/" + size + " bytes");
-        } // while
-
-        System.out.println("\nArchivo " + nombre + " de tamanio: " + size + " recibido.");
+            porciento = (int) ((recibidos * 100) / sizeFile);
+            System.out.println("\r Recibiendo el " + porciento + "% --- " + recibidos + "/" + sizeFile + " bytes");
+        } // while                               
+        
+        System.out.println("Se ha descargado el archivo " + nameFile + " con tamanio: " + sizeFile + " bytes");
         dos.close();
-        dis.close(); 
-        cliente.close();
+        dis.close();
+        dosArchivo.close();
+        cliente.close();        
         
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-//        Socket cliente = new Socket(direction, port);
-//
-//        DataOutputStream dos = new DataOutputStream(cliente.getOutputStream());
-//        // ---- BANDERA en 2 ----
-//        dos.writeInt(2); 
-//        dos.flush();
-//
-//        String home = System.getProperty("user.home");
-//        String rutaDes = (home + separator + "Downloads"); 
-//        // ---- Informacion del archivo ----
-//        
-//        dos.writeUTF(nombre);
-//        dos.flush();
-//        dos.writeUTF(rutaDes);
-//        dos.flush();
-//        // -----
-//        dos.close();
-//        cliente.close();
-        
-//*****************************        
-//        DataOutputStream dos = new DataOutputStream(cliente.getOutputStream());
-//        // ---- BANDERA en 2 ----
-//        dos.writeInt(2); 
-//        dos.flush();
-//
-//        // ---- Informacion del archivo ----
-//        dos.writeUTF(nombre);
-//        dos.flush();
-//        // -----
-//
-//        dos.close();
-//        cliente.close(); 
-
-//***********************************************
-        
-//        File f1 = new File("");
-//        String ruta = f1.getAbsolutePath();
-//        String carpeta="misArchivos";
-//        String ruta_archivos = ruta+"\\"+carpeta+"\\";
-//        System.out.println("ruta:"+ruta_archivos);
-//          
-//        JFileChooser inputFile = new JFileChooser(ruta_archivos);
-//        int r = inputFile.showOpenDialog(null);
-//        
-//        System.out.println("Abierto");
-//        if(r==JFileChooser.APPROVE_OPTION){
-//            File f = inputFile.getSelectedFile();
-//            String nombre = f.getName();
-//            String path = f.getAbsolutePath();
-//            System.out.println("p: "+ path);
-//            long tam = f.length();
-//            System.out.println("Preparandose pare descargar archivo "+path+" de "+tam+" bytes\n\n");
-//
-//            DataOutputStream dos = new DataOutputStream(cliente.getOutputStream());
-//            DataInputStream dis = new DataInputStream(new FileInputStream(path)); 
-//            // ---- BANDERA en 2 ----
-//            dos.writeInt(2); 
-//            dos.flush();
-//            
-//            // ---- Informacion del archivo ----
-//            dos.writeUTF(nombre);
-//            dos.flush();
-//            dos.writeLong(tam);
-//            dos.flush();
-//            // -----
-//            long enviados = 0;
-//            int l=0, porcentaje=0;
-//            
-//            while(enviados < tam){
-//                byte[] b = new byte[1500];
-//                l=dis.read(b);
-//                System.out.println(" descargados: "+l);
-//                dos.write(b,0,l);
-//                dos.flush();
-//                enviados = enviados + l;
-//                porcentaje = (int)((enviados * 100) / tam);
-//                System.out.print("\rDescargando el "+porcentaje+"% del archivo");
-//            }//while
-//            System.out.println("\nArchivo descargado...");
-//            dis.close();
-//            dos.close();
-//            cliente.close();
-//        }//if        
+        if(type == 1){
+            UnzipFile(rutaDes, home + separator + "Downloads" + separator);    
+        }
     }
     
     public static void verDirectorios(String direction, int port) throws IOException {
@@ -591,6 +566,19 @@ public class CEnvia {
         dis.close();
         dos.close();
         cliente.close();
+    }
+    
+    private static void eliminarArch_Carp(File archivo) {
+        if (!archivo.exists()){
+            return;
+        }
+
+        if (archivo.isDirectory()) {
+            for (File f : archivo.listFiles()) {
+                eliminarArch_Carp(f);
+            }
+        }
+        archivo.delete();
     }
 }
         
