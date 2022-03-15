@@ -13,10 +13,12 @@ public class Casilla {
     private int posColumna;
     private boolean mina;
     int numMinasAlrededor;
+    private Boolean abierta;
 
     public Casilla(int posFila, int posColumna) {
         this.posFila = posFila;
         this.posColumna = posColumna;
+        this.abierta = false;
     }
 
     public int getPosFila() {
@@ -54,4 +56,14 @@ public class Casilla {
     public void incrementarNumeroMinasAlrededor(){
         this.numMinasAlrededor++;
     }
+
+    public Boolean isAbierta() {
+        return abierta;
+    }
+
+    public void setAbierta(Boolean abierta) {
+        this.abierta = abierta;
+    }
+    
+    
 }
