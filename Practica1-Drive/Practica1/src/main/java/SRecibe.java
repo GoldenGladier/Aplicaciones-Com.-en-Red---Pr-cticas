@@ -137,10 +137,6 @@ public class SRecibe {
     }//main
     
     public static void recibeArchivo(long size, String nombre, DataInputStream dis) throws FileNotFoundException, IOException{
-        /* long tam = dis.readLong();
-        String pathDestino = dis.readUTF();
-        nombre = rutaServer + pathDestino; */
-
         System.out.println("\nSe recibe el archivo " + nombre + " con " + size + "bytes");
         DataOutputStream dos = new DataOutputStream(new FileOutputStream(nombre)); // OutputStream
 

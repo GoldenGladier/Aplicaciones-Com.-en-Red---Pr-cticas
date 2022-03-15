@@ -54,7 +54,7 @@ public class CEnvia {
                 System.out.println("5. Ver directorio principal (servidor).");
                 System.out.println("6. Entrar a directorio (servidor).");
                 System.out.println("7. Eliminar archivo/directorio (servidor).");
-                System.out.println("10 Salir.");
+                System.out.println("8. Salir.");
                 System.out.println("Seleccione una opción: ");
                 optionMenu = scan.nextInt();
                 
@@ -94,7 +94,7 @@ public class CEnvia {
                         //globalPathDirectory = globalPathDirectory + separator + filesServer[directoryIndex].getPath();
                         eliminarArchivo(dir, pto, globalPathDirectory + separator + filesServer[directoryIndex].getPath());
                         break;
-                    case 10:
+                    case 8:
                         System.exit(0);
                         break;
                 }
