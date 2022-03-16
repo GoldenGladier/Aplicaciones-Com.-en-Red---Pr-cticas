@@ -1,6 +1,7 @@
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.function.Consumer;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -17,6 +18,13 @@ public class TableroBuscaminas {
     int numFilas;
     int numColumnas;
     int numMinas;
+    
+    int numCasillasAbiertas;
+    boolean juegoTerminado;
+    
+    private Consumer <List<Casilla>> eventoPartidaPerdida;
+    private Consumer <List<Casilla>> eventoPartidaGanada;
+    private Consumer<Casilla> eventoCasillaAbierta;
 
     public TableroBuscaminas(int numFilas, int numColumnas, int numMinas) {
         this.numFilas = numFilas;
@@ -51,7 +59,7 @@ public class TableroBuscaminas {
         actualizarNumeroMinasAlrededor();
     }
     
-    private void imprimirTablero(){
+    public void imprimirTablero(){
         for(int i = 0; i < casillas.length; i++){
             for(int j = 0; j < casillas[i].length; j++){
                 System.out.print(casillas[i][j].isMina()?"*":"0");
@@ -104,11 +112,81 @@ public class TableroBuscaminas {
         return listaCasillas;
     }
     
+    List<Casilla> obtenerCasillasConMinas(){
+        List<Casilla> casillasMinas = new LinkedList<>();
+        for (int i = 0; i < casillas.length; i++) {
+            for (int j = 0; j < casillas[i].length; j++) {
+                if (casillas[i][j].isMina()) {
+                    casillasMinas.add(casillas[i][j]);
+                }
+            }
+        }  
+        return casillasMinas;
+    }
+    
+    public void seleccionarCasilla(int posFila, int posColumna){
+        eventoCasillaAbierta.accept(this.casillas[posFila][posColumna]);
+        if(this.casillas[posFila][posColumna].isMina()){
+            eventoPartidaPerdida.accept(obtenerCasillasConMinas());
+        }
+        else if(this.casillas[posFila][posColumna].getNumMinasAlrededor() == 0){
+            marcarCasillaAbierta(posFila, posColumna);
+            
+            List <Casilla> casillasAlrededor = obtenerCasillasAlrededor(posFila, posColumna);
+            for(Casilla casilla : casillasAlrededor){
+                if(!casilla.isAbierta()){
+                    //casilla.setAbierta(true);
+                    seleccionarCasilla(casilla.getPosFila(), casilla.getPosColumna());                    
+                }
+            }
+        }
+        else{
+            marcarCasillaAbierta(posFila, posColumna);
+        }
+        if(partidaGanada()){
+            eventoPartidaGanada.accept(obtenerCasillasConMinas());
+        }
+    }
+    
+    void marcarCasillaAbierta(int posFila, int posColumna){
+        if(!this.casillas[posFila][posColumna].isAbierta()){
+            numCasillasAbiertas++;
+            this.casillas[posFila][posColumna].setAbierta(true);
+        }
+    }
+    
+    boolean partidaGanada() {
+        return (numCasillasAbiertas >= (numFilas*numColumnas)-numMinas);
+    }
+    
+    
+    
     public static void main(String[] args) {
         TableroBuscaminas tablero = new TableroBuscaminas(6, 6, 5);
         tablero.imprimirTablero();
         System.out.println("--------------------------------------");
         tablero.imprimirPistas();
     }
+
+    public Consumer <List<Casilla>> getEventoPartidaPerdida() {
+        return eventoPartidaPerdida;
+    }
+
+    public void setEventoPartidaPerdida(Consumer <List<Casilla>> eventoPartidaPerdida) {
+        this.eventoPartidaPerdida = eventoPartidaPerdida;
+    }    
+
+    public Consumer<Casilla> getEventoCasillaAbierta() {
+        return eventoCasillaAbierta;
+    }
+
+    public void setEventoCasillaAbierta(Consumer<Casilla> eventoCasillaAbierta) {
+        this.eventoCasillaAbierta = eventoCasillaAbierta;
+    }
+
+    public void setEventoPartidaGanada(Consumer <List<Casilla>> eventoPartidaGanada) {
+        this.eventoPartidaGanada = eventoPartidaGanada;
+    }
+    
     
 }
