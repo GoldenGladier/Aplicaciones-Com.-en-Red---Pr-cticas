@@ -2,6 +2,8 @@
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.util.List;
 import java.util.function.Consumer;
 import javax.swing.JButton;
@@ -28,6 +30,8 @@ public class FrmJuego extends javax.swing.JFrame {
     int anchoControl = 30;
     int altoControl = 30;    
     
+    int bandera;
+    
     JButton[][] botonesTablero;
     TableroBuscaminas tableroBuscaminas;
         
@@ -39,6 +43,18 @@ public class FrmJuego extends javax.swing.JFrame {
         this.setSize(new Dimension(botonesTablero[0][numColumnas-1].getX() + botonesTablero[0][numColumnas-1].getWidth() + anchoControl + 10,
                 botonesTablero[numFilas-1][0].getY() + botonesTablero[numFilas-1][0].getHeight() + (altoControl*3) ));
         this.setLocationRelativeTo(null);
+        
+        addWindowListener (new WindowAdapter() {    
+            public void windowClosing (WindowEvent e) {
+                int bandera = -1; 
+                System.out.println("Ventana cerrada");
+            }    
+        }); 
+    }
+    
+    
+    public int getCerrar(){
+        return bandera;
     }
     
     void descargarControles(){
@@ -81,7 +97,7 @@ public class FrmJuego extends javax.swing.JFrame {
             }
         });
 
-        tableroBuscaminas.imprimirTablero();
+        //tableroBuscaminas.imprimirTablero();
         
         tableroBuscaminas.setEventoCasillaAbierta(new Consumer<Casilla>(){
             @Override
