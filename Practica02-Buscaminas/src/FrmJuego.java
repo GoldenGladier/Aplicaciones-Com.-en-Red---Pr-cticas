@@ -38,6 +38,7 @@ public class FrmJuego extends javax.swing.JFrame {
         juegoNuevo();
         this.setSize(new Dimension(botonesTablero[0][numColumnas-1].getX() + botonesTablero[0][numColumnas-1].getWidth() + anchoControl + 10,
                 botonesTablero[numFilas-1][0].getY() + botonesTablero[numFilas-1][0].getHeight() + (altoControl*3) ));
+        this.setLocationRelativeTo(null);
     }
     
     void descargarControles(){
