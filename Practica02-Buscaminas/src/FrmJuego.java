@@ -4,10 +4,22 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.Socket;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.JButton;
 import javax.swing.JOptionPane;
+import javax.swing.UIManager;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -34,12 +46,31 @@ public class FrmJuego extends javax.swing.JFrame {
     
     JButton[][] botonesTablero;
     TableroBuscaminas tableroBuscaminas;
+    
+    // -------- Client conections variables --------
+    //UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+    int port = 8000;
+    String direction = "127.0.0.1";
+    Socket cliente = new Socket(direction, port);      
+    DataOutputStream dos = new DataOutputStream(cliente.getOutputStream());
+    DataInputStream dis = new DataInputStream(cliente.getInputStream());
+    DatagramSocket sDatagram = new DatagramSocket(5555);
+    //DataInputStream disDatagram;
+    //DataOutputStream datagramDos;
         
-    public FrmJuego() {
+    public FrmJuego() throws IOException {
+        // -------- Client conections --------
+        //cliente =   
+        
+        // ---- BANDERA en 1 (Solicitud de startGame) ----
+//        dos.writeInt(1);
+//        dos.flush();
+        // -----------------------------------------------        
+        
         initComponents();
-//        cargarControles();
-//        crearTableroBuscaminas();
+
         juegoNuevo();
+        
         this.setSize(new Dimension(botonesTablero[0][numColumnas-1].getX() + botonesTablero[0][numColumnas-1].getWidth() + anchoControl + 10,
                 botonesTablero[numFilas-1][0].getY() + botonesTablero[numFilas-1][0].getHeight() + (altoControl*3) ));
         this.setLocationRelativeTo(null);
@@ -47,7 +78,16 @@ public class FrmJuego extends javax.swing.JFrame {
         addWindowListener (new WindowAdapter() {    
             public void windowClosing (WindowEvent e) {
                 int bandera = -1; 
-                System.out.println("Ventana cerrada");
+                System.out.println("Juego cerrado");
+                try {
+                    // ---- BANDERA en -1 (Juego cerrado) ----
+                    dos.writeInt(-1);
+                    dos.flush();  
+                    cliente.close();
+                    // -----------------------------------------------                                      
+                } catch (IOException ex) {
+                    Logger.getLogger(FrmJuego.class.getName()).log(Level.SEVERE, null, ex);
+                }                
             }    
         }); 
     }
@@ -69,10 +109,14 @@ public class FrmJuego extends javax.swing.JFrame {
         }
     }
     
-    private void juegoNuevo(){
+    private void juegoNuevo() throws IOException{
+        // ---- BANDERA en 1 (Solicitud de startGame) ----
+        dos.writeInt(1);
+        dos.flush();
+        // -----------------------------------------------             
         descargarControles();
         cargarControles();
-        crearTableroBuscaminas();   
+        //crearTableroBuscaminas();   
         repaint();
     }
     
@@ -132,7 +176,11 @@ public class FrmJuego extends javax.swing.JFrame {
                 botonesTablero[i][j].addActionListener(new ActionListener(){
                     @Override
                     public void actionPerformed(ActionEvent e){
-                        btnClick(e);
+                        try {
+                            btnClick(e);
+                        } catch (IOException ex) {
+                            Logger.getLogger(FrmJuego.class.getName()).log(Level.SEVERE, null, ex);
+                        }
                     }
                 });
                 getContentPane().add(botonesTablero[i][j]);
@@ -140,13 +188,106 @@ public class FrmJuego extends javax.swing.JFrame {
         }
     }
     
-    private void btnClick(ActionEvent e){
+    private void btnClick(ActionEvent e) throws IOException{
         JButton btn = (JButton) e.getSource();
         String[] coordenada = btn.getName().split(",");
         int posFila = Integer.parseInt(coordenada[0]);
-        int posColumna = Integer.parseInt(coordenada[1]);       
+        int posColumna = Integer.parseInt(coordenada[1]); 
+        DatagramPacket p;
+        DataInputStream disDatagram;
+        int fila, columna, nMinas, nCasillas;     
         //JOptionPane.showMessageDialog(rootPane, posFila + ", " + posColumna);
-        tableroBuscaminas.seleccionarCasilla(posFila, posColumna);
+        System.out.println("Selecciono: " + posFila + ", " + posColumna);
+        
+        // ---- BANDERA en 2 (button click) ----
+        //dos = new DataOutputStream(cliente.getOutputStream());
+        dos.writeInt(2);
+        dos.flush();
+        //dos.close();
+        // -----------------------------------------------           
+        
+        dos.writeInt(posFila);
+        dos.flush();
+        
+        dos.writeInt(posColumna);
+        dos.flush();
+        
+        System.out.println("Datos del boton enviados");
+        
+        // ---- leyendo bandera del servidor ----
+        int serverResponse = dis.readInt();
+        System.out.println("BANDERA SERVER: " + serverResponse);
+        
+        switch(serverResponse){
+            case -1: // GAME OVER
+                nCasillas = dis.readInt();
+                for(int i = 0; i < nCasillas; i++){
+                    p = new DatagramPacket(new byte[65535],65535);    
+                    sDatagram.receive(p);
+                    disDatagram = new DataInputStream(new ByteArrayInputStream(p.getData()));
+                    fila = disDatagram.readInt();
+                    columna = disDatagram.readInt();
+                    nMinas = disDatagram.readInt();
+                    disDatagram.close();
+                    System.out.println("Activando mina " + fila + ", " + columna + " --> " + nMinas);
+                    botonesTablero[fila][columna].setEnabled(false);   
+                    botonesTablero[fila][columna].setText("X");  
+                }//for                   
+                JOptionPane.showMessageDialog(rootPane, "GAME OVER!");
+                break;
+            case 1: // SE ABRE CASILLA
+                p = new DatagramPacket(new byte[65535],65535);    
+                sDatagram.receive(p);
+                disDatagram = new DataInputStream(new ByteArrayInputStream(p.getData()));
+                fila = disDatagram.readInt();
+                columna = disDatagram.readInt();
+                nMinas = disDatagram.readInt();
+                disDatagram.close();
+                System.out.println("Activando mina " + fila + ", " + columna + " --> " + nMinas);
+                botonesTablero[fila][columna].setEnabled(false);   
+                botonesTablero[fila][columna].setText(nMinas==0?"":nMinas + "");                 
+                break;
+            case 2: // ABRE CASILLAS CON CAÑON DE RIEL
+                nCasillas = dis.readInt();
+                for(int i = 0; i < nCasillas; i++){
+                    p = new DatagramPacket(new byte[65535],65535);    
+                    sDatagram.receive(p);
+                    disDatagram = new DataInputStream(new ByteArrayInputStream(p.getData()));
+                    fila = disDatagram.readInt();
+                    columna = disDatagram.readInt();
+                    nMinas = disDatagram.readInt();
+                    disDatagram.close();
+                    System.out.println("Activando mina " + fila + ", " + columna + " --> " + nMinas);
+                    botonesTablero[fila][columna].setEnabled(false);   
+                    botonesTablero[fila][columna].setText(nMinas==0?"":nMinas + "");  
+                }//for                
+                break;
+            case 10: // WIN
+                nCasillas = dis.readInt();
+                for(int i = 0; i < nCasillas; i++){
+                    p = new DatagramPacket(new byte[65535],65535);    
+                    sDatagram.receive(p);
+                    disDatagram = new DataInputStream(new ByteArrayInputStream(p.getData()));
+                    fila = disDatagram.readInt();
+                    columna = disDatagram.readInt();
+                    nMinas = disDatagram.readInt();
+                    disDatagram.close();
+                    if(i == nCasillas-1)
+                    {
+                        System.out.println("*** Abriendo casilla " + fila + ", " + columna + " --> " + nMinas + " ***");      
+                        botonesTablero[fila][columna].setText(nMinas + "");                         
+                    }
+                    else{
+                        System.out.println("Activando mina " + fila + ", " + columna + " --> " + nMinas);      
+                        botonesTablero[fila][columna].setText(":D");                         
+                    }
+                    botonesTablero[fila][columna].setEnabled(false);                        
+                }//for  
+                JOptionPane.showMessageDialog(rootPane, "WE HAVE A WINNER!");
+                break;                
+        }                       
+        
+        //tableroBuscaminas.seleccionarCasilla(posFila, posColumna);        
     }
     /**
      * This method is called from within the constructor to initialize the form.
@@ -193,7 +334,11 @@ public class FrmJuego extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void menuNuevoJuegoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_menuNuevoJuegoActionPerformed
-        juegoNuevo();
+        try {
+            juegoNuevo();
+        } catch (IOException ex) {
+            Logger.getLogger(FrmJuego.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }//GEN-LAST:event_menuNuevoJuegoActionPerformed
 
     /**
@@ -226,7 +371,12 @@ public class FrmJuego extends javax.swing.JFrame {
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                new FrmJuego().setVisible(true);
+                try {
+                    new FrmJuego().setVisible(true);
+                } catch (IOException ex) {
+                    //Logger.getLogger(FrmJuego.class.getName()).log(Level.SEVERE, null, ex);
+                    System.out.println("¡Ya hay un jugador conectado al servidor!");
+                }
             }
         });
     }

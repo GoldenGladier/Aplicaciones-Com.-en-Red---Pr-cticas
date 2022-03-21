@@ -14,7 +14,7 @@ import java.util.function.Consumer;
  * @author Omar
  */
 public class TableroBuscaminas {
-    Casilla [][] casillas;
+    public Casilla [][] casillas;
     int numFilas;
     int numColumnas;
     int numMinas;
@@ -62,7 +62,7 @@ public class TableroBuscaminas {
     public void imprimirTablero(){
         for(int i = 0; i < casillas.length; i++){
             for(int j = 0; j < casillas[i].length; j++){
-                System.out.print(casillas[i][j].isMina()?"*":"0");
+                System.out.print(casillas[i][j].isMina()?" * ":" 0 ");
             }
             System.out.println("");
         }
@@ -88,7 +88,7 @@ public class TableroBuscaminas {
         }        
     }
     
-    private List<Casilla> obtenerCasillasAlrededor(int posFila, int posColumna){
+    public List<Casilla> obtenerCasillasAlrededor(int posFila, int posColumna){
         List<Casilla> listaCasillas = new LinkedList<>();
         for(int i = 0; i < 8; i++){
             int temPosFila = posFila;
@@ -156,6 +156,7 @@ public class TableroBuscaminas {
     }
     
     boolean partidaGanada() {
+        System.out.println("Casillas abiertas: " + numCasillasAbiertas);
         return (numCasillasAbiertas >= (numFilas*numColumnas)-numMinas);
     }
     
