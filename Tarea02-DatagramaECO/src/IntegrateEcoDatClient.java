@@ -27,8 +27,9 @@ public class IntegrateEcoDatClient {
           s.setReuseAddress(true);
          // s.setBroadcast(true);
           System.out.println("Servidor iniciado... esperando datagramas...");
-          int seguidorF = 1;
+          
           for(;;){
+              int seguidorF = 1;
               byte[] b = new byte[65535];
               DatagramPacket p = new DatagramPacket(b, b.length);
               s.receive(p);
