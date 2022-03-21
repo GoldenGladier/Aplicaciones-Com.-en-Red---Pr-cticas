@@ -35,9 +35,9 @@ public class FrmJuego extends javax.swing.JFrame {
     /**
      * Creates new form FrmJuego
      */
-    int numFilas = 5;
-    int numColumnas = 5;
-    int numMinas = 2;
+    int numFilas = 16;
+    int numColumnas = 16;
+    int numMinas = 40;
     // ---- Botones casillas ----
     int anchoControl = 30;
     int altoControl = 30;    

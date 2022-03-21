@@ -156,7 +156,7 @@ public class DatagramServer {
     }
     
     private static void crearTableroBuscaminas() {
-        tableroBuscaminas = new TableroBuscaminas(5, 5, 2);
+        tableroBuscaminas = new TableroBuscaminas(16, 16, 40);
         System.out.println("Tablero inicializado");
         
         tableroBuscaminas.setEventoPartidaPerdida(new Consumer<List<Casilla>>(){
