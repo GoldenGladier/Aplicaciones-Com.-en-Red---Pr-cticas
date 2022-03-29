@@ -1,8 +1,8 @@
 
-import javax.swing.Icon;
-import javax.swing.ImageIcon;
 import java.awt.Image;
 import java.io.File;
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -12,16 +12,16 @@ import java.io.File;
 
 /**
  *
- * @author Axel
+ * @author Reina
  */
-public class GUI extends javax.swing.JFrame {
+public class GUI_NO extends javax.swing.JFrame {
 String path,tmp_u="",tmp_m="";
 int bandera;
 String mensaje_inicio="",mensaje_medio="",mensaje_final="";
     /**
      * Creates new form GUI
      */
-    public GUI() {
+    public GUI_NO() {
         initComponents();
         bandera=0;
         File f = new File("");
@@ -53,9 +53,8 @@ String mensaje_inicio="",mensaje_medio="",mensaje_final="";
        
        mensaje_final="</table>"; 
         
-       
-        ImageIcon foto_cara = obtenerImageIcon("risa.gif");
-        ImageIcon foto_wow = obtenerImageIcon("wow.gif");
+        ImageIcon foto_cara = new ImageIcon(ruta+"\\risa.gif");
+        ImageIcon foto_wow = new ImageIcon(ruta+"\\wow.gif");
         //ImageIcon foto = new ImageIcon("C:\\Users\\52552\\Documents\\NetBeansProjects\\tttttttttt\\cara.gif");
         Icon icono_cara = new ImageIcon(foto_cara.getImage().getScaledInstance(jLabel4.getWidth(),jLabel4.getHeight(),Image.SCALE_DEFAULT));
         jLabel4.setIcon(icono_cara);
@@ -64,11 +63,6 @@ String mensaje_inicio="",mensaje_medio="",mensaje_final="";
         //jEditorPane1.setText(mensaje_inicio);
         //bandera=1;
         this.repaint();
-    }
-    
-    public ImageIcon obtenerImageIcon(String nombre_imagen){
-        File img = new File(".\\src\\Imagenes\\" + nombre_imagen);
-        return new ImageIcon(img.getAbsolutePath());
     }
 
     /**
@@ -80,16 +74,11 @@ String mensaje_inicio="",mensaje_medio="",mensaje_final="";
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        jScrollPane2 = new javax.swing.JScrollPane();
-        jEditorPane2 = new javax.swing.JEditorPane();
-        jLabel6 = new javax.swing.JLabel();
         jScrollPane1 = new javax.swing.JScrollPane();
         jEditorPane1 = new javax.swing.JEditorPane();
         jLabel1 = new javax.swing.JLabel();
         jTextField1 = new javax.swing.JTextField();
         jButton1 = new javax.swing.JButton();
-        jLabel3 = new javax.swing.JLabel();
-        jSeparator1 = new javax.swing.JSeparator();
         jLabel2 = new javax.swing.JLabel();
         jLabel4 = new javax.swing.JLabel();
         jSeparator2 = new javax.swing.JSeparator();
@@ -97,15 +86,7 @@ String mensaje_inicio="",mensaje_medio="",mensaje_final="";
         jLabel5 = new javax.swing.JLabel();
         jTextField2 = new javax.swing.JTextField();
 
-        jScrollPane2.setViewportView(jEditorPane2);
-
-        jLabel6.setText("jLabel6");
-
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("Ejemplo");
-        setAlwaysOnTop(true);
-        setMinimumSize(new java.awt.Dimension(400, 450));
-        setSize(new java.awt.Dimension(1428, 1100));
         getContentPane().setLayout(null);
 
         jEditorPane1.setEditable(false);
@@ -134,17 +115,6 @@ String mensaje_inicio="",mensaje_medio="",mensaje_final="";
         });
         getContentPane().add(jButton1);
         jButton1.setBounds(310, 270, 63, 23);
-
-        jLabel3.setDoubleBuffered(true);
-        jLabel3.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                jLabel3MouseClicked(evt);
-            }
-        });
-        getContentPane().add(jLabel3);
-        jLabel3.setBounds(30, 330, 0, 0);
-        getContentPane().add(jSeparator1);
-        jSeparator1.setBounds(20, 260, 292, 0);
 
         jLabel2.setText("jLabel2");
         jLabel2.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -177,49 +147,44 @@ String mensaje_inicio="",mensaje_medio="",mensaje_final="";
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jButton1ActionPerformed
-
-    private void jLabel3MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jLabel3MouseClicked
-        // TODO add your handling code here:
-        System.out.println("");
-    }//GEN-LAST:event_jLabel3MouseClicked
-
-    private void jLabel4MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jLabel4MouseClicked
-        System.out.println("<img src=\"risa.gif\"width=\"50\" height=\"50\"></img>");
-               mensaje_medio= mensaje_medio+"  <tr>\n" +
-            "    <td>"+jTextField2.getText()+" dice: </td>\n" +
-            "    <td>"+"<img src=\"risa.gif\"width=\"50\" height=\"50\"></img>"+"</td>\n" +
-            "  </tr>";
-        jEditorPane1.setText(mensaje_inicio+mensaje_medio+mensaje_final);
-        this.repaint();
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jLabel4MouseClicked
-
-    private void jLabel2MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jLabel2MouseClicked
-        System.out.println("<img src=\"wow.gif\"width=\"40\" height=\"40\"></img>");
-                       mensaje_medio= mensaje_medio+"  <tr>\n" +
-            "    <td>"+jTextField2.getText()+" dice: </td>\n" +
-            "    <td>"+"<img src=\"wow.gif\"width=\"40\" height=\"40\"></img>"+"</td>\n" +
-            "  </tr>";
-        jEditorPane1.setText(mensaje_inicio+mensaje_medio+mensaje_final);
-        this.repaint();
-        // TODO add your handling code here:
-    }//GEN-LAST:event_jLabel2MouseClicked
-
     private void jButton1MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jButton1MouseClicked
         tmp_u =  jTextField2.getText();
         tmp_m =  jTextField1.getText();
         mensaje_medio= mensaje_medio+"  <tr>\n" +
-            "    <td>"+jTextField2.getText()+" dice: </td>\n" +
-            "    <td>"+jTextField1.getText()+"</td>\n" +
-            "  </tr>";
+        "    <td>"+jTextField2.getText()+" dice: </td>\n" +
+        "    <td>"+jTextField1.getText()+"</td>\n" +
+        "  </tr>";
         jEditorPane1.setText(mensaje_inicio+mensaje_medio+mensaje_final);
 
         this.repaint();
         // TODO add your handling code here:
     }//GEN-LAST:event_jButton1MouseClicked
+
+    private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jButton1ActionPerformed
+
+    private void jLabel2MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jLabel2MouseClicked
+        System.out.println("<img src=\"wow.gif\"width=\"40\" height=\"40\"></img>");
+        mensaje_medio= mensaje_medio+"  <tr>\n" +
+        "    <td>"+jTextField2.getText()+" dice: </td>\n" +
+        "    <td>"+"<img src=\"wow.gif\"width=\"40\" height=\"40\"></img>"+"</td>\n" +
+        "  </tr>";
+        jEditorPane1.setText(mensaje_inicio+mensaje_medio+mensaje_final);
+        this.repaint();
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jLabel2MouseClicked
+
+    private void jLabel4MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jLabel4MouseClicked
+        System.out.println("<img src=\"risa.gif\"width=\"50\" height=\"50\"></img>");
+        mensaje_medio= mensaje_medio+"  <tr>\n" +
+        "    <td>"+jTextField2.getText()+" dice: </td>\n" +
+        "    <td>"+"<img src=\"risa.gif\"width=\"50\" height=\"50\"></img>"+"</td>\n" +
+        "  </tr>";
+        jEditorPane1.setText(mensaje_inicio+mensaje_medio+mensaje_final);
+        this.repaint();
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jLabel4MouseClicked
 
     /**
      * @param args the command line arguments
@@ -238,20 +203,21 @@ String mensaje_inicio="",mensaje_medio="",mensaje_final="";
                 }
             }
         } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(GUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(GUI_NO.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(GUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(GUI_NO.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(GUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(GUI_NO.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         } catch (javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(GUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+            java.util.logging.Logger.getLogger(GUI_NO.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
+        //</editor-fold>
         //</editor-fold>
 
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                new GUI().setVisible(true);
+                new GUI_NO().setVisible(true);
             }
         });
     }
@@ -259,16 +225,11 @@ String mensaje_inicio="",mensaje_medio="",mensaje_final="";
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButton1;
     private javax.swing.JEditorPane jEditorPane1;
-    private javax.swing.JEditorPane jEditorPane2;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
-    private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
     private javax.swing.JLabel jLabel5;
-    private javax.swing.JLabel jLabel6;
     private javax.swing.JScrollPane jScrollPane1;
-    private javax.swing.JScrollPane jScrollPane2;
-    private javax.swing.JSeparator jSeparator1;
     private javax.swing.JSeparator jSeparator2;
     private javax.swing.JSeparator jSeparator3;
     private javax.swing.JTextField jTextField1;
