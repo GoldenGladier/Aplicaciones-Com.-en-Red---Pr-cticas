@@ -1,3 +1,5 @@
+package Test;
+
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -20,7 +22,7 @@ import java.util.Enumeration;
  *
  * @author Reina
  */
-public class CHMM {
+public class SHMM {
 
     static void despliegaInfoNIC(NetworkInterface netint) throws SocketException {
         System.out.printf("Nombre de despliegue: %s\n", netint.getDisplayName());
@@ -38,7 +40,7 @@ public class CHMM {
         try {
             BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
             Enumeration<NetworkInterface> nets = NetworkInterface.getNetworkInterfaces();
-            int z = 0, pto = 9931;
+            int z = 0, pto = 9930, pto_dst = 9931;
             for (NetworkInterface netint : Collections.list(nets)) {
                 System.out.print("[Interfaz " + ++z + "]:");
                 despliegaInfoNIC(netint);
@@ -50,30 +52,34 @@ public class CHMM {
             br.close();
             System.out.println("\nElegiste " + ni.getDisplayName());
 
-            MulticastSocket cl = new MulticastSocket(pto);
-            cl.setReuseAddress(true);
+            MulticastSocket s = new MulticastSocket(pto);
+            s.setReuseAddress(true);
+            s.setTimeToLive(255);
             InetAddress gpo = InetAddress.getByName("230.1.1.1");
             //InetAddress gpo = InetAddress.getByName("ff3e:40:2001::1");
             SocketAddress dir;
             try {
                 dir = new InetSocketAddress(gpo, pto);
             } catch (Exception e) {
-                System.err.println("Sintaxis: java UDPEchoClient host [port]");
+                e.printStackTrace();
                 return;
             }//catch
-
-            cl.joinGroup(dir, ni);
-            //cl.joinGroup(gpo);
-            System.out.println("Servicio iniciado y unido al grupo.. comienza escucha de mensajes");
+            s.joinGroup(dir, ni);
+            //s.joinGroup(gpo);
+            String msj = "Mensaje desde el servidor 3****";
+            byte[] b = msj.getBytes();
+            System.out.println("Servicio iniciado.. comienza envio de anuncios");
             for (;;) {
-                DatagramPacket p = new DatagramPacket(new byte[65535], 65535);
-                cl.receive(p);
-                System.out.println("Datagrama multicast recibido desde " + p.getAddress() + ":" + p.getPort() + "Con el mensaje:" + new String(p.getData(), 0, p.getLength()));
-
-            }//for
-
+                DatagramPacket p = new DatagramPacket(b, b.length, gpo, pto_dst);
+                s.send(p);
+                System.out.println("Mensaje enviado con un ttl=" + s.getTimeToLive());
+                try {
+                    Thread.sleep(5000);
+                } catch (InterruptedException ie) {
+                }
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
+    }//main
 }
