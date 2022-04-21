@@ -71,6 +71,17 @@ public class GUI1 extends javax.swing.JFrame {
     /*Variable para grabar audio*/
     final JavaSoundRecorder recorder = new JavaSoundRecorder();
     Audio manejoAudio;
+    
+    /*Getters*/
+
+    public HashMap<String, Integer> getUsuarios() {
+        return usuarios;
+    }
+
+    public HashMap<Integer, String> getUsuarios_i() {
+        return usuarios_i;
+    }
+    
 
     /*Envia el nombre de usuario*/
     public int send_msg_1(int origen, String username) {
