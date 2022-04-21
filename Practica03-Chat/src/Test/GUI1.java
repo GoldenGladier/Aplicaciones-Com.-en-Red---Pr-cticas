@@ -26,11 +26,15 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Mixer;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -51,35 +55,39 @@ public class GUI1 extends javax.swing.JFrame {
     /*Variables para creacion del multicast*/
     BufferedReader br;
     String msj;
-    
-    HashMap<String,Integer> usuarios=new HashMap<String,Integer>();
-    HashMap<Integer,String> usuarios_i=new HashMap<Integer,String>();
+
+    HashMap<String, Integer> usuarios = new HashMap<String, Integer>();
+    HashMap<Integer, String> usuarios_i = new HashMap<Integer, String>();
 
     /*Datos para conexion al socket*/
     MulticastSocket socket;
     String dir6 = "ff3e::1234:1";
     InetAddress gpo;
-    int pto=1234;
-    int tam = 65500; // establecemos el tamaño en 10 bytes
+    int pto = 1234;
+    int tam = 65500; // establecemos el tamaño maximo
     //String ni_name = "wlan2"; //nombre de interfaz
     int origen_hash;
-    
-    /*Enviar */
-    public int send_msg_1(int origen, String username){
+
+    /*Variable para grabar audio*/
+    final JavaSoundRecorder recorder = new JavaSoundRecorder();
+    Audio manejoAudio;
+
+    /*Envia el nombre de usuario*/
+    public int send_msg_1(int origen, String username) {
         try {
-            int tipo=1;
+            int tipo = 1;
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             DataOutputStream dos = new DataOutputStream(baos);
-            
+
             dos.writeInt(0); //
             dos.writeInt(origen); //
             dos.writeInt(tipo);
             dos.writeUTF(username); //
             //dos.write(msg);
             dos.flush();
-            
+
             byte[] byteDataPacket = baos.toByteArray();
-            
+
             // datagram packet: msg, size msg, destination, port
             DatagramPacket p = new DatagramPacket(byteDataPacket, byteDataPacket.length, gpo, pto);
             socket.send(p);
@@ -89,23 +97,23 @@ public class GUI1 extends javax.swing.JFrame {
         }
         return 0;
     }
-    
-    /*Enviar */
-    public int send_msg_2(int destino,int origen, byte[] msg){
+
+    /*Enviar texto (mensaje normal)*/
+    public int send_msg_2(int destino, int origen, byte[] msg) {
         try {
-            int tipo=2;
+            int tipo = 2;
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             DataOutputStream dos = new DataOutputStream(baos);
-            
+
             dos.writeInt(destino); // No. fragment
             dos.writeInt(origen); // Total
             dos.writeInt(tipo);
             dos.writeInt(msg.length); // Size fragment
             dos.write(msg);
             dos.flush();
-            
+
             byte[] byteDataPacket = baos.toByteArray();
-            
+
             // datagram packet: msg, size msg, destination, port
             DatagramPacket p = new DatagramPacket(byteDataPacket, byteDataPacket.length, gpo, pto);
             socket.send(p);
@@ -115,14 +123,14 @@ public class GUI1 extends javax.swing.JFrame {
         }
         return 0;
     }
-    
-    /*Enviar */
-    public int send_msg_3(int destino,int origen,long tam,int totalFragments,String msg){
+
+    /*Envia el nombre del archivo y su destino (a quien va dirigido) del archivo -> Nota: Este siempre se envia junto con el tipo 4*/
+    public int send_msg_3(int destino, int origen, long tam, int totalFragments, String msg) {
         try {
-            int tipo=3;
+            int tipo = 3;
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             DataOutputStream dos = new DataOutputStream(baos);
-            
+
             dos.writeInt(destino); // No. fragment
             dos.writeInt(origen); // Total
             dos.writeInt(tipo);
@@ -130,9 +138,9 @@ public class GUI1 extends javax.swing.JFrame {
             dos.writeInt(totalFragments);
             dos.writeUTF(msg);
             dos.flush();
-            
+
             byte[] byteDataPacket = baos.toByteArray();
-            
+
             // datagram packet: msg, size msg, destination, port
             DatagramPacket p = new DatagramPacket(byteDataPacket, byteDataPacket.length, gpo, pto);
             socket.send(p);
@@ -142,14 +150,14 @@ public class GUI1 extends javax.swing.JFrame {
         }
         return 0;
     }
-    
-    /*Enviar */
-    public int send_msg_4(int destino,int origen,int index,int fin, byte[] msg){
+
+    /*Envia los datos del archivo -> Recordar que este siempre se usa despues del tipo 3*/
+    public int send_msg_4(int destino, int origen, int index, int fin, byte[] msg) {
         try {
-            int tipo=4;
+            int tipo = 4;
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             DataOutputStream dos = new DataOutputStream(baos);
-            
+
             dos.writeInt(destino); // No. fragment
             dos.writeInt(origen); // Total
             dos.writeInt(tipo);
@@ -158,34 +166,9 @@ public class GUI1 extends javax.swing.JFrame {
             dos.writeInt(msg.length); // Size fragment
             dos.write(msg);
             dos.flush();
-            
+
             byte[] byteDataPacket = baos.toByteArray();
-            
-            // datagram packet: msg, size msg, destination, port
-            DatagramPacket p = new DatagramPacket(byteDataPacket, byteDataPacket.length, gpo, pto);
-            socket.send(p);
-        } catch (IOException ex) {
-            ex.printStackTrace();
-            return -1;
-        }
-        return 0;
-    }
-    
-    public int send_msg_5(int origen, String username){
-        try {
-            int tipo=5;
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            DataOutputStream dos = new DataOutputStream(baos);
-            
-            dos.writeInt(0); //
-            dos.writeInt(origen); //
-            dos.writeInt(tipo);
-            dos.writeUTF(username); //
-            //dos.write(msg);
-            dos.flush();
-            
-            byte[] byteDataPacket = baos.toByteArray();
-            
+
             // datagram packet: msg, size msg, destination, port
             DatagramPacket p = new DatagramPacket(byteDataPacket, byteDataPacket.length, gpo, pto);
             socket.send(p);
@@ -196,38 +179,64 @@ public class GUI1 extends javax.swing.JFrame {
         return 0;
     }
 
-    
-    public void init_network(){
-          try {
-              
-              //NetworkInterface ni = NetworkInterface.getByName(ni_name);
-              NetworkInterface ni;
-              ni = getNetwork();
-              socket = new MulticastSocket(pto);
-              socket.setReuseAddress(true);
-              SocketAddress dirm;
-              gpo=InetAddress.getByName(dir6);
-              try {
-                  dirm = new InetSocketAddress(gpo, pto);
-              } catch (Exception e) {
-                  e.printStackTrace();
-                  return;
-              }//catch
-              socket.joinGroup(dirm, ni);
-          } catch (SocketException ex) {
-              ex.printStackTrace();
-          } catch (IOException ex) {
-              ex.printStackTrace();
+    /*Es la contestacion al mensaje tipo uno*/
+    public int send_msg_5(int origen, String username) {
+        try {
+            int tipo = 5;
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            DataOutputStream dos = new DataOutputStream(baos);
+
+            dos.writeInt(0); //
+            dos.writeInt(origen); //
+            dos.writeInt(tipo);
+            dos.writeUTF(username); //
+            //dos.write(msg);
+            dos.flush();
+
+            byte[] byteDataPacket = baos.toByteArray();
+
+            // datagram packet: msg, size msg, destination, port
+            DatagramPacket p = new DatagramPacket(byteDataPacket, byteDataPacket.length, gpo, pto);
+            socket.send(p);
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            return -1;
+        }
+        return 0;
+    }
+
+    /*Creando el multicast*/
+    public void init_network() {
+        try {
+
+            //NetworkInterface ni = NetworkInterface.getByName(ni_name);
+            NetworkInterface ni;
+            ni = getNetwork();
+            socket = new MulticastSocket(pto);
+            socket.setReuseAddress(true);
+            SocketAddress dirm;
+            gpo = InetAddress.getByName(dir6);
+            try {
+                dirm = new InetSocketAddress(gpo, pto);
+            } catch (Exception e) {
+                e.printStackTrace();
+                return;
+            }//catch
+            socket.joinGroup(dirm, ni);
+        } catch (SocketException ex) {
+            ex.printStackTrace();
+        } catch (IOException ex) {
+            ex.printStackTrace();
         }//catch
     }
-    
+
     /*Metodo para obtener la interfaz multicast*/
     static public NetworkInterface getNetwork() {
         NetworkInterface ni = null;
         try {
             BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
             Enumeration<NetworkInterface> nets = NetworkInterface.getNetworkInterfaces();
-            
+
             int dir, dir_max = 0;
 
             int band;
@@ -238,7 +247,7 @@ public class GUI1 extends javax.swing.JFrame {
                     Enumeration<InetAddress> inetAddresses = netint.getInetAddresses();
                     dir = 0;
                     for (InetAddress inetAddress : Collections.list(inetAddresses)) {
-                        System.out.printf("Direccion: %s\n", inetAddress);
+                        //System.out.printf("Direccion: %s\n", inetAddress);
                         dir++;
                     }
                     if (dir > dir_max) {
@@ -252,55 +261,64 @@ public class GUI1 extends javax.swing.JFrame {
         }
         return ni;
     }
-    
+
+    /*Envia el archivo*/
     public void enviarArchivo(int destino_hash) throws IOException {
         //int destino_hash=destino.hashCode();
+
+        //init_network();
         
-        init_network();
+        //Para que tenga estilo el JFileChooser
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException ex) {
+            Logger.getLogger(GUI1.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
         JFileChooser inputFile = new JFileChooser();
         System.out.println("Abriendo file chooser");
 
         inputFile.setMultiSelectionEnabled(false);
-        inputFile.setFileSelectionMode(JFileChooser.FILES_ONLY);           
+        inputFile.setFileSelectionMode(JFileChooser.FILES_ONLY);
         int r = inputFile.showOpenDialog(null);
 
         System.out.println("Abierto");
-        if(r==JFileChooser.APPROVE_OPTION){
+        if (r == JFileChooser.APPROVE_OPTION) {
             File f = inputFile.getSelectedFile();
             String nombre = f.getName();
             String path = f.getAbsolutePath();
             long file_size = f.length();
-            System.out.println("Preparandose pare enviar archivo "+path+" de "+file_size+" bytes\n\n");
+            System.out.println("Preparandose pare enviar archivo " + path + " de " + file_size + " bytes\n\n");
 
-            DataInputStream dis = new DataInputStream(new FileInputStream(path)); 
+            DataInputStream dis = new DataInputStream(new FileInputStream(path));
 
- 
             int enviados = 0;
-            int l=0, porcentaje=0;
-            int tp = (int)(file_size / tam);
-        // Si sobran bytes
+            int l = 0, porcentaje = 0;
+            int tp = (int) (file_size / tam);
+            // Si sobran bytes
             int totalFragments = tp;
-            if(file_size % tam > 0){
+            if (file_size % tam > 0) {
                 totalFragments++;
             }
-            send_msg_3(destino_hash,origen_hash,file_size,totalFragments,nombre);
+            send_msg_3(destino_hash, origen_hash, file_size, totalFragments, nombre);
 
-            while(enviados < totalFragments){
+            while (enviados < totalFragments) {
                 try {
                     Thread.sleep(3);//agrega tiempo para que el receptor sea capaz de procesar todos los paquetes
                 } catch (InterruptedException ex) {
                     ex.printStackTrace();
                 }
                 byte[] b = new byte[tam]; //https://en.wikipedia.org/wiki/User_Datagram_Protocol#:~:text=The%20field%20size%20sets%20a,20%2Dbyte%20IP%20header).
-                l=dis.read(b);
-                System.out.println(" enviados: "+l);
-                send_msg_4(destino_hash,origen_hash,enviados+1,totalFragments,b);
+                l = dis.read(b);
+                System.out.println(" enviados: " + l);
+                send_msg_4(destino_hash, origen_hash, enviados + 1, totalFragments, b);
                 enviados = enviados + 1;
-                porcentaje = (int)((enviados * 100) / totalFragments);
-                System.out.print("\rEnviado el "+porcentaje+"% del archivo");
+                porcentaje = (int) ((enviados * 100) / totalFragments);
+                System.out.print("\rEnviado el " + porcentaje + "% del archivo");
             }//while
         }//if     
     }
+
 
     /**
      * Creates new form GUI
@@ -315,7 +333,7 @@ public class GUI1 extends javax.swing.JFrame {
         if ("".equals(nameUser)) {
             JOptionPane.showMessageDialog(null, "Debes ingresar un nombre de usuario", "Advertencia", JOptionPane.WARNING_MESSAGE);
             nameUser = JOptionPane.showInputDialog(null, "Nombre de usuario: ", "Bienvenido", JOptionPane.QUESTION_MESSAGE);
-            
+
         }
         //Si se cancela se advierte al usuario y se termina la aplicación
         if (nameUser == null) {
@@ -324,21 +342,21 @@ public class GUI1 extends javax.swing.JFrame {
         }
 
         initComponents();
-        
+
         //Titulo de ventana
         this.setTitle("Chat: " + nameUser);
-        
+
         //Conexion a multicast
         init_network();
-        
+
         origen_hash = nameUser.hashCode();
-        usuarios.put(nameUser,origen_hash);
-        usuarios.put("publico",0);
-        
-        usuarios_i.put(origen_hash,nameUser);
-        usuarios_i.put(0,"publico");
-        
-        send_msg_1(origen_hash,nameUser);
+        usuarios.put(nameUser, origen_hash);
+        usuarios.put("publico", 0);
+
+        usuarios_i.put(origen_hash, nameUser);
+        usuarios_i.put(0, "publico");
+
+        send_msg_1(origen_hash, nameUser);
 
         /*Ajuste de tamaño de ventana*/
         Toolkit tk = Toolkit.getDefaultToolkit();
@@ -348,7 +366,7 @@ public class GUI1 extends javax.swing.JFrame {
         this.setSize(ancho, alto);
 
         this.setLocationRelativeTo(null); //Centra la ventana
-        
+
         bandera = 0;
         File f = new File("");
         String ruta = f.getAbsolutePath();
@@ -381,15 +399,12 @@ public class GUI1 extends javax.swing.JFrame {
 
         ImageIcon foto_cara = obtenerImageIcon("risa.gif");
         ImageIcon foto_wow = obtenerImageIcon("wow.gif");
-        
+
         /*Creando ImageIcons - De iconos de interfaz grafica*/
-        ImageIcon adjuntar = obtenerImageIcon("clip.png");
+        ImageIcon adjuntar = obtenerImageIcon("archivoIc.png");
         ImageIcon sendA = obtenerImageIcon("audio.png");
 
-        /*Agregando iconos a interfaz grafica*/
-        lblArchivo.setIcon(adjuntar);
-        lblAudio.setIcon(sendA);
-        
+
         //ImageIcon foto = new ImageIcon("C:\\Users\\52552\\Documents\\NetBeansProjects\\tttttttttt\\cara.gif");
 //        Icon icono_cara = new ImageIcon(foto_cara.getImage().getScaledInstance(jLabel4.getWidth(), jLabel4.getHeight(), Image.SCALE_DEFAULT));
 //        jLabel4.setIcon(icono_cara);
@@ -397,16 +412,15 @@ public class GUI1 extends javax.swing.JFrame {
 //        jLabel2.setIcon(icono_wow);
         //jEditorPane1.setText(mensaje_inicio);
         //bandera=1;
-
         this.repaint();
 
         new Thread(() -> {
             try {
-            Recibe r = new Recibe(socket, this);
-            r.start();
-            r.join(); //tal vez no vaya
-        } catch (Exception e) {
-        }
+                Recibe r = new Recibe(socket, this);
+                r.start();
+                r.join(); //tal vez no vaya
+            } catch (Exception e) {
+            }
         }).start();
     }
 
@@ -415,19 +429,20 @@ public class GUI1 extends javax.swing.JFrame {
         File img = new File(".\\src\\Imagenes\\" + nombre_imagen);
         return new ImageIcon(img.getAbsolutePath());
     }
-    
+
+    /*Reemplaza el dimbolo Emoji con la imagen de emoji*/
     public String formatEmojis(String cad) {
-            
-            String emojis[] = new String[]{":)", ":(", ":0", ";("};
-            String emojis_img[] = new String[]{ 
-                "<img src = '.\\src\\Imagenes\\feliz.png' width='20' height='20'>",
-                "<img src = '.\\src\\Imagenes\\triste.png' width='20' height='20'>",
-                "<img src = '.\\src\\Imagenes\\sorpresa.png' width='20' height='20'>",
-                "<img src = '.\\src\\Imagenes\\enojado.png' width='20' height='20'>"};
-            for (int i = 0; i < emojis.length; i++) {
-                cad = cad.replace(emojis[i],emojis_img[i]);
-            }
-            return cad;
+
+        String emojis[] = new String[]{":)", ":(", ":0", ";("};
+        String emojis_img[] = new String[]{
+            "<img src = '.\\src\\Imagenes\\feliz.png' width='20' height='20'>",
+            "<img src = '.\\src\\Imagenes\\triste.png' width='20' height='20'>",
+            "<img src = '.\\src\\Imagenes\\sorpresa.png' width='20' height='20'>",
+            "<img src = '.\\src\\Imagenes\\enojado.png' width='20' height='20'>"};
+        for (int i = 0; i < emojis.length; i++) {
+            cad = cad.replace(emojis[i], emojis_img[i]);
+        }
+        return cad;
     }
 
     class Recibe extends Thread {
@@ -435,19 +450,19 @@ public class GUI1 extends javax.swing.JFrame {
         MulticastSocket s;
         JFrame componente;
 
-        public Recibe(MulticastSocket m,JFrame componente) {
+        public Recibe(MulticastSocket m, JFrame componente) {
             this.s = m;
             this.componente = componente;
         }
-        
-        public void recibeArchivo(long size, int totalFragments,String nombre) throws FileNotFoundException, IOException{
+
+        public void recibeArchivo(long size, int totalFragments, String nombre) throws FileNotFoundException, IOException {
             System.out.println("\nSe recibe el archivo " + nombre + " con " + size + "bytes");
             DataOutputStream dos = new DataOutputStream(new FileOutputStream(nombre)); // OutputStream
 
             long recibidos = 0;
             int n = 0, porciento = 0;
             //byte[] b = new byte[65000];
-            int nFragment=0;
+            int nFragment = 0;
             int totalFragments_;
             int sizeFragment;
             while (nFragment < totalFragments) {
@@ -458,10 +473,10 @@ public class GUI1 extends javax.swing.JFrame {
                 // DATAGRAMA (Structure: No. fragment, No. f. totals, size fragment, fragment)
                 DataInputStream dis = new DataInputStream(new ByteArrayInputStream(p.getData()));
                 int hash_dest = dis.readInt();
-                if(hash_dest== 0 || hash_dest==origen_hash){
+                if (hash_dest == 0 || hash_dest == origen_hash) {
                     int hash_orig = dis.readInt();
                     int tipo = dis.readInt();
-                    if(tipo==4){
+                    if (tipo == 4) {
                         nFragment = dis.readInt();
                         totalFragments_ = dis.readInt();
                         sizeFragment = dis.readInt();
@@ -473,33 +488,33 @@ public class GUI1 extends javax.swing.JFrame {
                         dos.flush();
                         recibidos++;
                         porciento = (int) ((recibidos * 100) / totalFragments);
-                        System.out.println("\r Recibiendo el " + porciento + "% ---- "+ nFragment + "/" + totalFragments);
+                        System.out.println("\r Recibiendo el " + porciento + "% ---- " + nFragment + "/" + totalFragments);
                     }
 
-                }else{
+                } else {
                     System.out.println("\nSe ha descartado el datagrama ");
                 }
 
-                dis.close();   
+                dis.close();
 
             } // while
 
-            if(recibidos==totalFragments){
+            if (recibidos == totalFragments) {
                 System.out.println("\nArchivo recibido exitosamente ");
             }
 
             System.out.println("\nArchivo " + nombre + " de tamanio: " + size + " recibido.");
-            dos.close();     
-    }
+            dos.close();
+        }
 
         public void run() {
             try {
-                
+
                 File f = new File("");
                 String ruta = f.getAbsolutePath();
-                String carpeta="misArchivos\\"+nameUser;
-                String ruta_archivos = ruta+"\\"+carpeta+"\\";
-                System.out.println("ruta:"+ruta_archivos);
+                String carpeta = "misArchivos\\" + nameUser;
+                String ruta_archivos = ruta + "\\" + carpeta + "\\";
+                System.out.println("ruta:" + ruta_archivos);
                 File f2 = new File(ruta_archivos);
                 f2.mkdirs();
                 f2.setWritable(true);
@@ -512,32 +527,31 @@ public class GUI1 extends javax.swing.JFrame {
                     DataInputStream dis = new DataInputStream(new ByteArrayInputStream(p.getData()));
                     int hash_dest = dis.readInt();
                     int hash_orig = dis.readInt();
-                    if(hash_dest== 0 || hash_dest==origen_hash || hash_orig==origen_hash){
+                    if (hash_dest == 0 || hash_dest == origen_hash || hash_orig == origen_hash) {
                         int tipo = dis.readInt();
-                        if(tipo==1 && hash_orig!=origen_hash){//mensaje inicio
+                        if (tipo == 1 && hash_orig != origen_hash) {//mensaje inicio
                             System.out.println("Recibiendo mensaje tipo 1");
-                            String name=dis.readUTF();
-                            System.out.println("Nombre: "+name);
-                            System.out.println("origen: "+hash_orig);
-                            System.out.println("destino: "+hash_dest);
-                            System.out.println("hash nombre: "+name.hashCode());
-                            if(!usuarios.containsKey(name)){
+                            String name = dis.readUTF();
+                            System.out.println("Nombre: " + name);
+                            System.out.println("origen: " + hash_orig);
+                            System.out.println("destino: " + hash_dest);
+                            System.out.println("hash nombre: " + name.hashCode());
+                            if (!usuarios.containsKey(name)) {
                                 System.out.println("usuario añadido");
-                                usuarios.put(name,hash_orig);
-                                usuarios_i.put(hash_orig,name);
+                                usuarios.put(name, hash_orig);
+                                usuarios_i.put(hash_orig, name);
                                 cboUsers.addItem(name);
-                            }else{
+                            } else {
                                 System.out.println("usuario encontrado");
                                 System.out.println(usuarios.get(name));
-                            
+
                             }
                             System.out.println("Mappings of HashMap usuarios are : "
-                           + usuarios);
-                            send_msg_5(origen_hash,nameUser);
-                        }
-                        else if(tipo==2){//mensaje texto
+                                    + usuarios);
+                            send_msg_5(origen_hash, nameUser);
+                        } else if (tipo == 2) {//mensaje texto
                             System.out.println("Recibiendo mensaje tipo 2");
-                            if(!usuarios.containsValue(hash_orig)){ //Si no esta registrado no lee el mensaje
+                            if (!usuarios.containsValue(hash_orig)) { //Si no esta registrado no lee el mensaje
                                 System.out.println("Usuario no registrado, por tanto no se lee el mensaje");
                                 //usuarios
                                 continue;
@@ -546,92 +560,113 @@ public class GUI1 extends javax.swing.JFrame {
                             byte[] bMsg = new byte[sizeFragment];
                             int x = dis.read(bMsg);
                             String msg = new String(bMsg);
-                            
+
                             System.out.println(msg);
                             msg = formatEmojis(msg);
                             //mostrar mensaje en ventana
                             //tmp_m = txtMensaje.getText();
-                            if(hash_dest== 0){
+                            if (hash_dest == 0) {
                                 mensaje_medio = mensaje_medio + "  <tr>\n"
-                                    + "    <td>" + usuarios_i.get(hash_orig) + " dice: </td>\n"
-                                    + "    <td>" + msg + "</td>\n"
-                                    + "  </tr>";
-                            }else{
+                                        + "    <td>" + usuarios_i.get(hash_orig) + " dice: </td>\n"
+                                        + "    <td>" + msg + "</td>\n"
+                                        + "  </tr>";
+                            } else {
                                 mensaje_medio = mensaje_medio + "  <tr>\n"
-                                    //+ "    <td>privado</td>\n"
-                                    + "    <td>" + usuarios_i.get(hash_orig) + " dice: </td>\n"
-                                    + "    <td>" + msg + "</td>\n"
-                                    + "  </tr>";
+                                        //+ "    <td>privado</td>\n"
+                                        + "    <td>" + usuarios_i.get(hash_orig) + " dice: </td>\n"
+                                        + "    <td>" + msg + "</td>\n"
+                                        + "  </tr>";
                             }
-                            
+
                             epCanalTxt.setText(mensaje_inicio + mensaje_medio + mensaje_final);
 
                             componente.repaint();
-                        }
-                        else if(tipo==3 ){//mensaje para recibir archivo
+                        } else if (tipo == 3) {//mensaje para recibir archivo
                             // Ejecutar funcion #1
                             long size = dis.readLong();
                             System.out.println("Tamaño de archivo: " + size);
                             int totalFragments = dis.readInt();
                             System.out.println("Total Fragmentos: " + totalFragments);
                             String name = dis.readUTF();
-                            System.out.println("Nombre de archivo: " + name);        
-                            
-                            
-                            if(hash_dest== 0){
+                            System.out.println("Nombre de archivo: " + name);
+
+                            if (hash_dest == 0) {
                                 mensaje_medio = mensaje_medio + "  <tr>\n"
-                                    + "    <td>" + usuarios_i.get(hash_orig) + " envia: </td>\n"
-                                    + "    <td>" + name + "</td>\n"
-                                    + "  </tr>";
-                            }else{
+                                        + "    <td>" + usuarios_i.get(hash_orig) + " envia: </td>\n"
+                                        + "    <td>" + name + "</td>\n"
+                                        + "  </tr>";
+                            } else {
                                 mensaje_medio = mensaje_medio + "  <tr>\n"
-                                    //+ "    <td>privado</td>\n"
-                                    + "    <td>" + usuarios_i.get(hash_orig) + " envia: </td>\n"
-                                    + "    <td>" + name + "</td>\n"
-                                    + "  </tr>";
+                                        //+ "    <td>privado</td>\n"
+                                        + "    <td>" + usuarios_i.get(hash_orig) + " envia: </td>\n"
+                                        + "    <td>" + name + "</td>\n"
+                                        + "  </tr>";
                             }
-                            
+
                             epCanalTxt.setText(mensaje_inicio + mensaje_medio + mensaje_final);
 
                             componente.repaint();
-                            if(hash_orig!=origen_hash)
-                                recibeArchivo(size,totalFragments, ruta_archivos + name);
-                        }
-                        else if(tipo==5 && hash_orig!=origen_hash){//mensaje inicio
+                            if (hash_orig != origen_hash) {
+                                recibeArchivo(size, totalFragments, ruta_archivos + name);
+                            }
+                        } else if (tipo == 5 && hash_orig != origen_hash) {//mensaje inicio
                             System.out.println("Recibiendo mensaje tipo 1");
-                            String name=dis.readUTF();
-                            System.out.println("Nombre: "+name);
-                            System.out.println("origen: "+hash_orig);
-                            System.out.println("destino: "+hash_dest);
-                            System.out.println("hash nombre: "+name.hashCode());
-                            if(!usuarios.containsKey(name)){
+                            String name = dis.readUTF();
+                            System.out.println("Nombre: " + name);
+                            System.out.println("origen: " + hash_orig);
+                            System.out.println("destino: " + hash_dest);
+                            System.out.println("hash nombre: " + name.hashCode());
+                            if (!usuarios.containsKey(name)) {
                                 System.out.println("usuario añadido");
-                                usuarios.put(name,hash_orig);
-                                usuarios_i.put(hash_orig,name);
+                                usuarios.put(name, hash_orig);
+                                usuarios_i.put(hash_orig, name);
                                 cboUsers.addItem(name);
-                            }else{
+                            } else {
                                 System.out.println("usuario encontrado");
                                 System.out.println(usuarios.get(name));
-                            
+
                             }
                             System.out.println("Mappings of HashMap usuarios are : "
-                           + usuarios);
+                                    + usuarios);
                         }
                     }
-                dis.close();
+                    dis.close();
                 } //for
             } catch (Exception e) {
                 e.printStackTrace();
             }//catch
         }//run
     }//class
-    
+
     /*Metodo para detectar un emoji*/
-    public void isEmoji(String cad){
-        String emojis[] = new String[]{ ":)",":(",":0",";(" };
+    public void isEmoji(String cad) {
+        String emojis[] = new String[]{":)", ":(", ":0", ";("};
         boolean emo;
-        for(int i = 0; i < 4; i++){
+        for (int i = 0; i < 4; i++) {
             emo = cad.contains(emojis[i]);
+        }
+    }
+
+    /*Clase para manejar Audio*/
+    class Audio extends Thread {
+
+        @Override
+        public void run() {
+            try {
+                BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+                recorder.start(5);
+                br.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }//catch
+        }
+
+        public void finish() {
+            recorder.finish();
+        }
+
+        public String getRuta() {
+            return recorder.getPath();
         }
     }
 
@@ -658,10 +693,9 @@ public class GUI1 extends javax.swing.JFrame {
         jSeparator3 = new javax.swing.JSeparator();
         cboUsers = new javax.swing.JComboBox<>();
         jLabel7 = new javax.swing.JLabel();
-        lblArchivo = new javax.swing.JLabel();
-        lblAudio = new javax.swing.JLabel();
         refreshUsers = new javax.swing.JButton();
         btnEnviarArchivo = new javax.swing.JButton();
+        tbtnAudio = new javax.swing.JToggleButton();
 
         jScrollPane2.setViewportView(jEditorPane2);
 
@@ -690,7 +724,7 @@ public class GUI1 extends javax.swing.JFrame {
         jScrollPane1.setViewportView(epCanalTxt);
 
         getContentPane().add(jScrollPane1);
-        jScrollPane1.setBounds(70, 60, 570, 200);
+        jScrollPane1.setBounds(20, 40, 440, 200);
 
         jLabel1.setText("Escribe aquí:");
         getContentPane().add(jLabel1);
@@ -710,13 +744,13 @@ public class GUI1 extends javax.swing.JFrame {
             }
         });
         getContentPane().add(btnEnviar);
-        btnEnviar.setBounds(500, 290, 63, 23);
+        btnEnviar.setBounds(400, 280, 63, 23);
         getContentPane().add(jSeparator1);
-        jSeparator1.setBounds(20, 338, 380, 10);
+        jSeparator1.setBounds(20, 330, 380, 10);
 
         jSeparator3.setOrientation(javax.swing.SwingConstants.VERTICAL);
         getContentPane().add(jSeparator3);
-        jSeparator3.setBounds(660, 10, 10, 380);
+        jSeparator3.setBounds(520, 20, 10, 380);
 
         cboUsers.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "publico" }));
         cboUsers.addActionListener(new java.awt.event.ActionListener() {
@@ -725,20 +759,12 @@ public class GUI1 extends javax.swing.JFrame {
             }
         });
         getContentPane().add(cboUsers);
-        cboUsers.setBounds(390, 290, 100, 20);
+        cboUsers.setBounds(550, 90, 100, 20);
 
         jLabel7.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
         jLabel7.setText("Conectados");
         getContentPane().add(jLabel7);
-        jLabel7.setBounds(710, 70, 80, 14);
-
-        lblArchivo.setText("jLabel2");
-        getContentPane().add(lblArchivo);
-        lblArchivo.setBounds(140, 370, 34, 14);
-
-        lblAudio.setText("jLabel4");
-        getContentPane().add(lblAudio);
-        lblAudio.setBounds(220, 360, 34, 14);
+        jLabel7.setBounds(550, 60, 80, 14);
 
         refreshUsers.setText("Actualizar");
         refreshUsers.addActionListener(new java.awt.event.ActionListener() {
@@ -747,7 +773,7 @@ public class GUI1 extends javax.swing.JFrame {
             }
         });
         getContentPane().add(refreshUsers);
-        refreshUsers.setBounds(700, 40, 140, 23);
+        refreshUsers.setBounds(540, 30, 140, 23);
 
         btnEnviarArchivo.setText("Enviar archivo");
         btnEnviarArchivo.addActionListener(new java.awt.event.ActionListener() {
@@ -756,7 +782,16 @@ public class GUI1 extends javax.swing.JFrame {
             }
         });
         getContentPane().add(btnEnviarArchivo);
-        btnEnviarArchivo.setBounds(500, 340, 110, 23);
+        btnEnviarArchivo.setBounds(330, 360, 110, 23);
+
+        tbtnAudio.setText("Grabar Audio");
+        tbtnAudio.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                tbtnAudioMouseClicked(evt);
+            }
+        });
+        getContentPane().add(tbtnAudio);
+        tbtnAudio.setBounds(210, 360, 105, 23);
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
@@ -784,16 +819,16 @@ public class GUI1 extends javax.swing.JFrame {
 
             //System.out.println("Escribe un mensaje para ser enviado:");
             String mensaje = txtMensaje.getText();
-            String destino = (String)cboUsers.getSelectedItem();
-            System.out.println("Enviando mensaje a: "+destino);
+            String destino = (String) cboUsers.getSelectedItem();
+            System.out.println("Enviando mensaje a: " + destino);
             //Contruccion de paquete de datos (Nombre de usuario, tipo de mensaje[publico o privado], mensaje a enviar)
-            send_msg_2(usuarios.get(destino),origen_hash, mensaje.getBytes());
+            send_msg_2(usuarios.get(destino), origen_hash, mensaje.getBytes());
         } catch (Exception e) {
             e.printStackTrace();
         }
-        
+
         txtMensaje.setText("");
-        
+
         // TODO add your handling code here:
     }//GEN-LAST:event_btnEnviarMouseClicked
 
@@ -802,43 +837,66 @@ public class GUI1 extends javax.swing.JFrame {
         JComboBox comboBox = (JComboBox) evt.getSource();
 
         Object selected = comboBox.getSelectedItem();
-        if(selected.toString().equals("publico"))
+        if (selected.toString().equals("publico"))
             System.out.println("Seleccionando publico");
         else
-            System.out.println("seleccionando a: "+selected.toString());
+            System.out.println("seleccionando a: " + selected.toString());
     }//GEN-LAST:event_cboUsersActionPerformed
 
     private void refreshUsersActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_refreshUsersActionPerformed
-        usuarios = new HashMap<String,Integer>();
-        usuarios_i = new HashMap<Integer,String>();
-        
+        usuarios = new HashMap<String, Integer>();
+        usuarios_i = new HashMap<Integer, String>();
+
         /*DefaultComboBoxModel model = (DefaultComboBoxModel)cboUsers.getModel();
         model.removeAllElements();
         cboUsers.addItem("publico");*/
-        cboUsers.setModel(new DefaultComboBoxModel(new String[] {"publico"}));
+        cboUsers.setModel(new DefaultComboBoxModel(new String[]{"publico"}));
         cboUsers.setSelectedIndex(0);
-        
-        
+
         //cboUsers.addItem("juanito");
-        usuarios.put(nameUser,origen_hash);
-        usuarios.put("publico",0);
-        
-        usuarios_i.put(origen_hash,nameUser);
-        usuarios_i.put(0,"publico");
-        
-        send_msg_1(origen_hash,nameUser);
+        usuarios.put(nameUser, origen_hash);
+        usuarios.put("publico", 0);
+
+        usuarios_i.put(origen_hash, nameUser);
+        usuarios_i.put(0, "publico");
+
+        send_msg_1(origen_hash, nameUser);
     }//GEN-LAST:event_refreshUsersActionPerformed
 
     private void btnEnviarArchivoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEnviarArchivoActionPerformed
         try {
-            String destino = (String)cboUsers.getSelectedItem();
-            System.out.println("Enviando archivo a: "+destino);
+            String destino = (String) cboUsers.getSelectedItem();
+            System.out.println("Enviando archivo a: " + destino);
             //Contruccion de paquete de datos (Nombre de usuario, tipo de mensaje[publico o privado], mensaje a enviar)
             enviarArchivo(usuarios.get(destino));
         } catch (IOException ex) {
             ex.printStackTrace();
         }
+
     }//GEN-LAST:event_btnEnviarArchivoActionPerformed
+
+    private void tbtnAudioMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tbtnAudioMouseClicked
+        System.out.println("estado: " + tbtnAudio.getModel().isSelected());
+
+//        try {
+        if (tbtnAudio.getModel().isSelected()) {
+            manejoAudio = new Audio();
+
+            manejoAudio.start();
+        } else {
+            manejoAudio.finish();
+            String pathA = manejoAudio.getRuta();
+            System.out.println("ruta Audio: " + pathA);
+            String destino = (String) cboUsers.getSelectedItem();
+            System.out.println("Enviando audio a: " + destino);
+            //Contruccion de paquete de datos (Nombre de usuario, tipo de mensaje[publico o privado], mensaje a enviar)
+            //enviarArchivo(usuarios.get(destino), pathA);
+        }
+//        } catch (IOException ex) {
+//            ex.printStackTrace();
+//        }
+
+    }//GEN-LAST:event_tbtnAudioMouseClicked
 
     /**
      * @param args the command line arguments
@@ -899,9 +957,8 @@ public class GUI1 extends javax.swing.JFrame {
     private javax.swing.JSeparator jSeparator1;
     private javax.swing.JSeparator jSeparator3;
     private javax.swing.JTable jTable1;
-    private javax.swing.JLabel lblArchivo;
-    private javax.swing.JLabel lblAudio;
     private javax.swing.JButton refreshUsers;
+    private javax.swing.JToggleButton tbtnAudio;
     private javax.swing.JTextField txtMensaje;
     // End of variables declaration//GEN-END:variables
 }
