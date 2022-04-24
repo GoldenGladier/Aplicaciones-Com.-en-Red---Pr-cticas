@@ -46,7 +46,7 @@ import javax.swing.UnsupportedLookAndFeelException;
  *
  * @author Axel
  */
-public class GUI1 extends javax.swing.JFrame {
+public class GUI1 extends javax.swing.JFrame {  
 
     String path, tmp_u = "", tmp_m = "";
     int bandera;
@@ -328,7 +328,6 @@ public class GUI1 extends javax.swing.JFrame {
      * Creates new form GUI
      */
     public GUI1() {
-
         //Ventana de dialogo para obtener nombre de usuario
         nameUser = JOptionPane.showInputDialog(null, "Nombre de usuario: ", "Bienvenido", JOptionPane.QUESTION_MESSAGE);
 
@@ -345,7 +344,12 @@ public class GUI1 extends javax.swing.JFrame {
             System.exit(0);
         }
 
-        initComponents();
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException ex) {
+            Logger.getLogger(GUI1.class.getName()).log(Level.SEVERE, null, ex);
+        }   
+        initComponents();     
 
         //Titulo de ventana
         this.setTitle("Chat: " + nameUser);
@@ -426,6 +430,7 @@ public class GUI1 extends javax.swing.JFrame {
             } catch (Exception e) {
             }
         }).start();
+        
     }
 
     /*Metodo para obtener la ruta absoluta de la imagen*/
@@ -604,6 +609,7 @@ public class GUI1 extends javax.swing.JFrame {
                                 mensaje_medio = mensaje_medio + "  <tr>\n"
                                         + "    <td>" + usuarios_i.get(hash_orig) + " envia: </td>\n"
                                         + "    <td>" + name + "</td>\n"
+                                        + "<td>"
                                         + "  </tr>";
                             } else {
                                 mensaje_medio = mensaje_medio + "  <tr>\n"
@@ -883,12 +889,6 @@ public class GUI1 extends javax.swing.JFrame {
 
     private void btnEnviarArchivoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEnviarArchivoActionPerformed
         try {
-            try {
-                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException ex) {
-                Logger.getLogger(GUI1.class.getName()).log(Level.SEVERE, null, ex);
-            }
-
             String destino = (String) cboUsers.getSelectedItem();
             System.out.println("Enviando archivo a: " + destino);
             //Contruccion de paquete de datos (Nombre de usuario, tipo de mensaje[publico o privado], mensaje a enviar)            
