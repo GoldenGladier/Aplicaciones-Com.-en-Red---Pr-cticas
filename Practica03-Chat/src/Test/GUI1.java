@@ -1,5 +1,6 @@
 package Test;
 
+import java.awt.Color;
 import java.awt.Dimension;
 import javax.swing.ImageIcon;
 import java.awt.Toolkit;
@@ -45,7 +46,7 @@ import javax.swing.UnsupportedLookAndFeelException;
  *
  * @author Axel
  */
-public class GUI1 extends javax.swing.JFrame {
+public class GUI1 extends javax.swing.JFrame {  
 
     String path, tmp_u = "", tmp_m = "";
     int bandera;
@@ -182,7 +183,7 @@ public class GUI1 extends javax.swing.JFrame {
 
             // datagram packet: msg, size msg, destination, port
             DatagramPacket p = new DatagramPacket(byteDataPacket, byteDataPacket.length, gpo, pto);
-            socket.send(p);
+            socket.send(p);           
         } catch (IOException ex) {
             ex.printStackTrace();
             return -1;
@@ -273,67 +274,53 @@ public class GUI1 extends javax.swing.JFrame {
         return ni;
     }
 
-    /*Envia el archivo*/
-    public void enviarArchivo(int destino_hash) throws IOException {
+    /*Envia el archivo (CAMBIOS SABADO)*/
+    public void enviarArchivo(int destino_hash, File f) throws IOException {
         //int destino_hash=destino.hashCode();
 
         //init_network();
         
         //Para que tenga estilo el JFileChooser
-        try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException ex) {
-            Logger.getLogger(GUI1.class.getName()).log(Level.SEVERE, null, ex);
+
+        String nombre = f.getName();
+        String path = f.getAbsolutePath();
+        long file_size = f.length();
+
+        System.out.println("\nPreparandose pare enviar archivo " + path + " de " + file_size + " bytes");
+        System.out.println("A -> " + destino_hash + " -> desde -> " + origen_hash + "\n");
+
+        DataInputStream dis = new DataInputStream(new FileInputStream(path));
+
+        int enviados = 0;
+        int l = 0, porcentaje = 0;
+        int tp = (int) (file_size / tam);
+        int lastPacket = (int) (file_size % tam);
+        byte[] b;
+        // Si sobran bytes
+        int totalFragments = tp;
+        if (file_size % tam > 0) {
+            totalFragments++;
         }
+        send_msg_3(destino_hash, origen_hash, file_size, totalFragments, nombre);
 
-        JFileChooser inputFile = new JFileChooser();
-        System.out.println("Abriendo file chooser");
-
-        inputFile.setMultiSelectionEnabled(false);
-        inputFile.setFileSelectionMode(JFileChooser.FILES_ONLY);
-        int r = inputFile.showOpenDialog(null);
-
-        System.out.println("Abierto");
-        if (r == JFileChooser.APPROVE_OPTION) {
-            File f = inputFile.getSelectedFile();
-            String nombre = f.getName();
-            String path = f.getAbsolutePath();
-            long file_size = f.length();
-            System.out.println("Preparandose pare enviar archivo " + path + " de " + file_size + " bytes\n\n");
-
-            DataInputStream dis = new DataInputStream(new FileInputStream(path));
-
-            int enviados = 0;
-            int l = 0, porcentaje = 0;
-            int tp = (int) (file_size / tam);
-            // Si sobran bytes
-            int lp = (int) (file_size%tam); //Tamaño del ultimo paquete
-            int totalFragments = tp;
-            
-            if (file_size % tam > 0) {
-                totalFragments++;
+        while (enviados < totalFragments) {
+            try {
+                Thread.sleep(100);//agrega tiempo para que el receptor sea capaz de procesar todos los paquetes
+            } catch (InterruptedException ex) {
+                ex.printStackTrace();
             }
-            send_msg_3(destino_hash, origen_hash, file_size, totalFragments, nombre);
-
-            while (enviados < totalFragments) {
-                try {
-                    Thread.sleep(3);//agrega tiempo para que el receptor sea capaz de procesar todos los paquetes
-                } catch (InterruptedException ex) {
-                    ex.printStackTrace();
-                }
-                byte[] b;
-                if (enviados < totalFragments-1 )
-                    b = new byte[tam]; //https://en.wikipedia.org/wiki/User_Datagram_Protocol#:~:text=The%20field%20size%20sets%20a,20%2Dbyte%20IP%20header).
-                else
-                    b = new byte[lp];
-                l = dis.read(b);
-                System.out.println(" enviados: " + l);
-                send_msg_4(destino_hash, origen_hash, enviados + 1, totalFragments, b);
-                enviados = enviados + 1;
-                porcentaje = (int) ((enviados * 100) / totalFragments);
-                System.out.print("\rEnviado el " + porcentaje + "% del archivo");
-            }//while
-        }//if     
+            if (enviados < totalFragments - 1) {
+                b = new byte[tam]; //https://en.wikipedia.org/wiki/User_Datagram_Protocol#:~:text=The%20field%20size%20sets%20a,20%2Dbyte%20IP%20header).
+            } else {
+                b = new byte[lastPacket];
+            }
+            l = dis.read(b);
+            send_msg_4(destino_hash, origen_hash, enviados + 1, totalFragments, b);
+            enviados = enviados + 1;
+            porcentaje = (int) ((enviados * 100) / totalFragments);
+            System.out.print("\rEnviado el " + porcentaje + "% del archivo (" + enviados + "/" + totalFragments + ")" + " enviados: " + l);
+        }//while
+        //}//if     
     }
 
 
@@ -341,7 +328,6 @@ public class GUI1 extends javax.swing.JFrame {
      * Creates new form GUI
      */
     public GUI1() {
-
         //Ventana de dialogo para obtener nombre de usuario
         nameUser = JOptionPane.showInputDialog(null, "Nombre de usuario: ", "Bienvenido", JOptionPane.QUESTION_MESSAGE);
 
@@ -358,7 +344,12 @@ public class GUI1 extends javax.swing.JFrame {
             System.exit(0);
         }
 
-        initComponents();
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException ex) {
+            Logger.getLogger(GUI1.class.getName()).log(Level.SEVERE, null, ex);
+        }   
+        initComponents();     
 
         //Titulo de ventana
         this.setTitle("Chat: " + nameUser);
@@ -439,6 +430,7 @@ public class GUI1 extends javax.swing.JFrame {
             } catch (Exception e) {
             }
         }).start();
+        
     }
 
     /*Metodo para obtener la ruta absoluta de la imagen*/
@@ -473,7 +465,7 @@ public class GUI1 extends javax.swing.JFrame {
         }
 
         public void recibeArchivo(long size, int totalFragments, String nombre) throws FileNotFoundException, IOException {
-            System.out.println("\nSe recibe el archivo " + nombre + " con " + size + "bytes");
+            System.out.println("\nSe recibe el archivo " + nombre + " con " + size + " bytes");
             DataOutputStream dos = new DataOutputStream(new FileOutputStream(nombre)); // OutputStream
 
             long recibidos = 0;
@@ -563,6 +555,12 @@ public class GUI1 extends javax.swing.JFrame {
                                 System.out.println(usuarios.get(name));
 
                             }
+                            mensaje_medio += "<tr id=\"nuevo_usuario\">"
+                                    + "<td>" + "<span style=\"color:#8D8DAA\">" + usuarios_i.get(hash_orig) +  " se ha unido al chat. </span> </td>\n"
+                                    + "</tr>";
+                            epCanalTxt.setText(mensaje_inicio + mensaje_medio + mensaje_final);
+                            
+                            
                             System.out.println("Mappings of HashMap usuarios are : "
                                     + usuarios);
                             send_msg_5(origen_hash, nameUser);
@@ -611,6 +609,7 @@ public class GUI1 extends javax.swing.JFrame {
                                 mensaje_medio = mensaje_medio + "  <tr>\n"
                                         + "    <td>" + usuarios_i.get(hash_orig) + " envia: </td>\n"
                                         + "    <td>" + name + "</td>\n"
+                                        + "<td>"
                                         + "  </tr>";
                             } else {
                                 mensaje_medio = mensaje_medio + "  <tr>\n"
@@ -671,7 +670,15 @@ public class GUI1 extends javax.swing.JFrame {
         public void run() {
             try {
                 BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-                recorder.start(5);
+                Mixer.Info[] mixerInfo = AudioSystem.getMixerInfo();
+                int line_port = 0;
+                for(int cnt = 0; cnt < mixerInfo.length;cnt++){
+                    if( (mixerInfo[cnt].getName().contains("Microphone Array")) && (!mixerInfo[cnt].getName().contains("Port")) ){
+                        line_port = cnt;
+                        break;
+                    }
+                }//end for loop                
+                recorder.start(line_port);
                 br.close();
             } catch (Exception e) {
                 e.printStackTrace();
@@ -745,9 +752,9 @@ public class GUI1 extends javax.swing.JFrame {
 
         jLabel1.setText("Escribe aquí:");
         getContentPane().add(jLabel1);
-        jLabel1.setBounds(20, 270, 90, 14);
+        jLabel1.setBounds(20, 280, 90, 16);
         getContentPane().add(txtMensaje);
-        txtMensaje.setBounds(90, 270, 290, 50);
+        txtMensaje.setBounds(100, 270, 280, 30);
 
         btnEnviar.setText("Enviar");
         btnEnviar.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -761,7 +768,7 @@ public class GUI1 extends javax.swing.JFrame {
             }
         });
         getContentPane().add(btnEnviar);
-        btnEnviar.setBounds(400, 280, 63, 23);
+        btnEnviar.setBounds(410, 270, 67, 25);
         getContentPane().add(jSeparator1);
         jSeparator1.setBounds(20, 330, 380, 10);
 
@@ -776,7 +783,7 @@ public class GUI1 extends javax.swing.JFrame {
             }
         });
         getContentPane().add(cboUsers);
-        cboUsers.setBounds(550, 90, 100, 20);
+        cboUsers.setBounds(550, 90, 100, 22);
 
         jLabel7.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
         jLabel7.setText("Conectados");
@@ -790,7 +797,7 @@ public class GUI1 extends javax.swing.JFrame {
             }
         });
         getContentPane().add(refreshUsers);
-        refreshUsers.setBounds(540, 30, 140, 23);
+        refreshUsers.setBounds(540, 30, 140, 25);
 
         btnEnviarArchivo.setText("Enviar archivo");
         btnEnviarArchivo.addActionListener(new java.awt.event.ActionListener() {
@@ -799,7 +806,7 @@ public class GUI1 extends javax.swing.JFrame {
             }
         });
         getContentPane().add(btnEnviarArchivo);
-        btnEnviarArchivo.setBounds(330, 360, 110, 23);
+        btnEnviarArchivo.setBounds(330, 360, 110, 25);
 
         tbtnAudio.setText("Grabar Audio");
         tbtnAudio.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -808,7 +815,7 @@ public class GUI1 extends javax.swing.JFrame {
             }
         });
         getContentPane().add(tbtnAudio);
-        tbtnAudio.setBounds(210, 360, 105, 23);
+        tbtnAudio.setBounds(210, 360, 105, 25);
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
@@ -884,8 +891,24 @@ public class GUI1 extends javax.swing.JFrame {
         try {
             String destino = (String) cboUsers.getSelectedItem();
             System.out.println("Enviando archivo a: " + destino);
-            //Contruccion de paquete de datos (Nombre de usuario, tipo de mensaje[publico o privado], mensaje a enviar)
-            enviarArchivo(usuarios.get(destino));
+            //Contruccion de paquete de datos (Nombre de usuario, tipo de mensaje[publico o privado], mensaje a enviar)            
+
+            JFileChooser inputFile = new JFileChooser();
+            System.out.println("Abriendo file chooser");
+
+            inputFile.setMultiSelectionEnabled(false);
+            inputFile.setFileSelectionMode(JFileChooser.FILES_ONLY);
+            int r = inputFile.showOpenDialog(null);
+
+            System.out.println("Abierto");
+            if (r == JFileChooser.APPROVE_OPTION) {
+                File f = inputFile.getSelectedFile();
+                enviarArchivo(usuarios.get(destino), f);
+            }
+            else{
+                System.out.println("OCURRIO UN ERROR AL ENVIAR EL ARCHIVO.");
+            }
+
         } catch (IOException ex) {
             ex.printStackTrace();
         }
@@ -895,7 +918,7 @@ public class GUI1 extends javax.swing.JFrame {
     private void tbtnAudioMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_tbtnAudioMouseClicked
         System.out.println("estado: " + tbtnAudio.getModel().isSelected());
 
-//        try {
+        try {
         if (tbtnAudio.getModel().isSelected()) {
             manejoAudio = new Audio();
 
@@ -907,11 +930,12 @@ public class GUI1 extends javax.swing.JFrame {
             String destino = (String) cboUsers.getSelectedItem();
             System.out.println("Enviando audio a: " + destino);
             //Contruccion de paquete de datos (Nombre de usuario, tipo de mensaje[publico o privado], mensaje a enviar)
-            //enviarArchivo(usuarios.get(destino), pathA);
+            File new_audio = new File(pathA);
+            enviarArchivo(usuarios.get(destino), new_audio);
         }
-//        } catch (IOException ex) {
-//            ex.printStackTrace();
-//        }
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
 
     }//GEN-LAST:event_tbtnAudioMouseClicked
 
