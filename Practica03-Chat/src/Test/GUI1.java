@@ -307,7 +307,9 @@ public class GUI1 extends javax.swing.JFrame {
             int l = 0, porcentaje = 0;
             int tp = (int) (file_size / tam);
             // Si sobran bytes
+            int lp = (int) (file_size%tam); //Tamaño del ultimo paquete
             int totalFragments = tp;
+            
             if (file_size % tam > 0) {
                 totalFragments++;
             }
@@ -319,7 +321,11 @@ public class GUI1 extends javax.swing.JFrame {
                 } catch (InterruptedException ex) {
                     ex.printStackTrace();
                 }
-                byte[] b = new byte[tam]; //https://en.wikipedia.org/wiki/User_Datagram_Protocol#:~:text=The%20field%20size%20sets%20a,20%2Dbyte%20IP%20header).
+                byte[] b;
+                if (enviados < totalFragments-1 )
+                    b = new byte[tam]; //https://en.wikipedia.org/wiki/User_Datagram_Protocol#:~:text=The%20field%20size%20sets%20a,20%2Dbyte%20IP%20header).
+                else
+                    b = new byte[lp];
                 l = dis.read(b);
                 System.out.println(" enviados: " + l);
                 send_msg_4(destino_hash, origen_hash, enviados + 1, totalFragments, b);
@@ -495,7 +501,7 @@ public class GUI1 extends javax.swing.JFrame {
                         n = dis.read(bMsg);
 
                         //n = dis.read(b);
-                        dos.write(b, 0, n);
+                        dos.write(bMsg, 0, n);
                         dos.flush();
                         recibidos++;
                         porciento = (int) ((recibidos * 100) / totalFragments);
