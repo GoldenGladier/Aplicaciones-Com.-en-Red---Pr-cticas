@@ -50,13 +50,13 @@ public class ServidorWeb1
 					System.out.println("\nCliente Conectado desde: "+socket.getInetAddress());
 					System.out.println("Por el puerto: "+socket.getPort());
                                         System.out.println("=========== DATOS ===========");                                        
-					System.out.println("Datos: "+peticion+"\r\n\r\n");
+//					System.out.println("Datos: "+peticion+"\r\n\r\n");
                                         System.out.println("=============================");
                                         
 					StringTokenizer st1= new StringTokenizer(peticion,"\n");
                                         String line = st1.nextToken();
                                         System.out.println("LINE: " + line);
-					if(line.indexOf("?")==-1)
+					if(line.indexOf("?")==-1 && !line.toUpperCase().startsWith("POST"))
 					{
                                                 System.out.println("No se encontro '?'");
 						getArch(line);
@@ -69,7 +69,7 @@ public class ServidorWeb1
 							SendA(FileName,dos);
 						}
 						//System.out.println(FileName);												
-					}                                     
+					}    
                                         else if(line.toUpperCase().startsWith("GET"))
 					{
                                                 System.out.println("PETICION GET CON LOS PARAMETROS: ");
@@ -98,7 +98,38 @@ public class ServidorWeb1
                                                 dos.close();
                                                 socket.close();
 					}
-					else
+                                        /* 
+                                            Esta serie de IF's se encargarán de realizar el trabajo de las peticiones faltantes (POST, PUT, ETC)
+                                        */
+                                        else if(line.toUpperCase().startsWith("POST")){
+                                            System.out.println("PETICION POST CON LOS PARAMETROS"); 
+                                            StringTokenizer stokens = new StringTokenizer(peticion, "\n");
+                                            String _line_ = stokens.nextToken();
+                                            while ( !_line_.startsWith("Apellido") && stokens.hasMoreElements() ) {
+                                                _line_ = stokens.nextToken();                                         
+                                            }
+                                            String parametros = _line_;
+                                            System.out.print("PARAMETROS: ---> " + parametros);
+
+                                            StringBuffer respuesta= new StringBuffer();
+
+                                            respuesta.append("HTTP/1.0 200 Okay \n");
+                                            String fecha= "Date: " + new Date()+" \n";
+                                            respuesta.append(fecha);
+                                            String tipo_mime = "Content-Type: text/html \n\n";
+                                            respuesta.append(tipo_mime);
+                                            respuesta.append("<html><head><title>SERVIDOR WEB</title></head>\n");
+                                            respuesta.append("<body bgcolor=\"#F9CEEE\"><center><h1><br>Parametros Obtenidos Mediante POST...</br></h1><h3><b>\n");
+                                            respuesta.append(parametros);
+                                            respuesta.append("</b></h3>\n");
+                                            respuesta.append("</center></body></html>\n\n");
+                                            System.out.println("Respuesta: "+respuesta);
+                                            dos.write(respuesta.toString().getBytes());
+                                            dos.flush();
+                                            dos.close();
+                                            socket.close();                                            
+                                        }   
+                                        else
 					{
 						dos.write("HTTP/1.0 501 Not Implemented\r\n".getBytes());
                                                 dos.flush();
@@ -106,14 +137,6 @@ public class ServidorWeb1
                                                 socket.close();
 						//pw.println();
 					}
-                                        /* 
-                                            Esta serie de IF's se encargarán de realizar el trabajo de las peticiones faltantes (POST, PUT, ETC)
-                                        */
-                                        if(line.toUpperCase().startsWith("POST")){
-                                            System.out.println("PETICION POST"); 
-                                            System.out.println(showDate());
-                                            
-                                        }   
 				}
 				catch(Exception e)
 				{
