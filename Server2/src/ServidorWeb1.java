@@ -1,5 +1,7 @@
 import java.net.*;
 import java.io.*;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -56,7 +58,7 @@ public class ServidorWeb1
 					StringTokenizer st1= new StringTokenizer(peticion,"\n");
                                         String line = st1.nextToken();
                                         System.out.println("LINE: " + line);
-					if(line.indexOf("?")==-1 && !line.toUpperCase().startsWith("POST"))
+					if(line.indexOf("?")==-1 && line.toUpperCase().startsWith("GET"))
 					{
                                                 System.out.println("No se encontro '?'");
 						getArch(line);
@@ -113,7 +115,7 @@ public class ServidorWeb1
 
                                             StringBuffer respuesta= new StringBuffer();
 
-                                            respuesta.append("HTTP/1.0 200 Okay \n");
+                                            respuesta.append("HTTP/1.0 201 Okay \n");
                                             String fecha= "Date: " + new Date()+" \n";
                                             respuesta.append(fecha);
                                             String tipo_mime = "Content-Type: text/html \n\n";
@@ -128,7 +130,46 @@ public class ServidorWeb1
                                             dos.flush();
                                             dos.close();
                                             socket.close();                                            
-                                        }   
+                                        }  
+                                        else if(line.toUpperCase().startsWith("DELETE")){
+                                            System.out.println("PETICION DELETE"); 
+                                            System.out.println("Data: " + peticion);
+                                            
+                                            StringTokenizer tokens=new StringTokenizer(line," ");
+                                            String req_a = tokens.nextToken();
+                                            String req = tokens.nextToken();
+                                            System.out.println("Token1: " + req_a);
+                                            System.out.println("Token2: " + req);      
+                                            Path path = Paths.get("");
+                                            String directoryName = path.toAbsolutePath().toString();
+                                            System.out.println(directoryName + req);
+                                            
+                                            File fichero = new File(directoryName + req);
+                                            String response;
+                                            if (fichero.delete())
+                                                response = "El fichero " + fichero.getName() + " ha sido eliminado satisfactoriamente";                                                
+                                            else
+                                                response = "El fichero " + fichero.getName() + " no pudo ser eliminado, es probable que no exista en el servidor";
+                                            System.out.println(response);
+                                            
+                                            StringBuffer respuesta= new StringBuffer();
+
+                                            respuesta.append("HTTP/1.0 202 Okay \n");
+                                            String fecha= "Date: " + new Date()+" \n";
+                                            respuesta.append(fecha);
+                                            String tipo_mime = "Content-Type: text/html \n\n";
+                                            respuesta.append(tipo_mime);
+                                            respuesta.append("<html><head><title>SERVIDOR WEB</title></head>\n");
+                                            respuesta.append("<body bgcolor=\"#FFFFFF\"><center><h1><br>Recurso eliminado</br></h1><h3><b>\n");
+                                            respuesta.append(response);
+                                            respuesta.append("</b></h3>\n");
+                                            respuesta.append("</center></body></html>\n\n");
+                                            System.out.println("Respuesta: "+respuesta);
+                                            dos.write(respuesta.toString().getBytes());
+                                            dos.flush();
+                                            dos.close();
+                                            socket.close();                                            
+                                        }                                        
                                         else
 					{
 						dos.write("HTTP/1.0 501 Not Implemented\r\n".getBytes());
