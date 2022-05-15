@@ -169,7 +169,47 @@ public class ServidorWeb1
                                             dos.flush();
                                             dos.close();
                                             socket.close();                                            
-                                        }                                        
+                                        }  
+                                        else if(line.toUpperCase().startsWith("PUT")){
+                                            System.out.println("PETICION PUT"); 
+                                            System.out.println("Data: " + peticion);
+                                            
+                                            StringTokenizer tokens=new StringTokenizer(line," ");
+                                            String req_a = tokens.nextToken();
+                                            String req = tokens.nextToken();
+                                            System.out.println("Token1: " + req_a);
+                                            System.out.println("Token2: " + req);      
+                                            Path path = Paths.get("");
+                                            String directoryName = path.toAbsolutePath().toString();
+                                            System.out.println(directoryName + req);
+                                            
+                                            String contenido = "Contenido de ejemplo para " + req;
+                                            File fichero = new File(directoryName + req);
+                                            fichero.createNewFile();
+                                            
+                                            FileWriter fw = new FileWriter(fichero);
+                                            BufferedWriter bw = new BufferedWriter(fw);
+                                            bw.write(contenido);
+                                            bw.close();
+                                         
+                                            StringBuffer respuesta= new StringBuffer();
+
+                                            respuesta.append("HTTP/1.0 202 Okay \n");
+                                            String fecha= "Date: " + new Date()+" \n";
+                                            respuesta.append(fecha);
+                                            String tipo_mime = "Content-Type: text/html \n\n";
+                                            respuesta.append(tipo_mime);
+                                            respuesta.append("<html><head><title>SERVIDOR WEB</title></head>\n");
+                                            respuesta.append("<body bgcolor=\"#FFFFFF\"><center><h1><br>Recurso creado</br></h1><h3><b>\n");
+                                            respuesta.append("El fichero " + fichero.getName() + " fue creado exitosamente");
+                                            respuesta.append("</b></h3>\n");
+                                            respuesta.append("</center></body></html>\n\n");
+                                            System.out.println("Respuesta: "+respuesta);
+                                            dos.write(respuesta.toString().getBytes());
+                                            dos.flush();
+                                            dos.close();
+                                            socket.close();                                            
+                                        }                                         
                                         else
 					{
 						dos.write("HTTP/1.0 501 Not Implemented\r\n".getBytes());
