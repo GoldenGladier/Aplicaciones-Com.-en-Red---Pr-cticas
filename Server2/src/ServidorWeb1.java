@@ -12,6 +12,13 @@ public class ServidorWeb1
 		
 		class Manejador extends Thread
 		{
+//                    MANEJAR LOS ERRORES 404, 200, 403
+//                    PETICIONES QUE DEBEMOS HACER:
+//                    1. GET
+//                    2. POST
+//                    3. DELETE
+//                    4. PUT
+//                    5. HEAD
 			protected Socket socket;
 			protected PrintWriter pw;
 			protected BufferedOutputStream bos;
