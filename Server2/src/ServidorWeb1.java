@@ -4,10 +4,13 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class ServidorWeb1
 {
 	public static final int PUERTO=8000;
+        public static final int TAM_POOL=100;
 	ServerSocket ss;
 		
 		class Manejador extends Thread
@@ -367,20 +370,33 @@ public class ServidorWeb1
 				
 			}
 		}
-		public ServidorWeb1() throws Exception
-		{
-			System.out.println("Iniciando Servidor.......");
+		public ServidorWeb1(){
+                    try {
+                        
+                        ExecutorService pool = Executors.newFixedThreadPool(TAM_POOL);
+                        
+                        
+                        System.out.println("Iniciando Servidor.......");
+                        System.out.println("\n\n Pool de Conexiones: " + TAM_POOL);
 			this.ss=new ServerSocket(PUERTO);
 			System.out.println("Servidor iniciado:---OK");
-                        URL myURL = new URL("http://127.0.0.1:8000/");
+                        URL myURL = new URL("http://127.0.0.1:" + PUERTO + "8000/");
                         System.out.println("Servidor en: " + myURL);
                         System.out.println(myURL);
 			System.out.println("Esperando por Cliente....");
 			for(;;)
 			{
-				Socket accept=ss.accept();
-				new Manejador(accept).start();
+//				Socket accept=ss.accept();
+//				new Manejador(accept).start();
+                            
+                                Socket accept=ss.accept();
+                                Manejador manejador = new Manejador(accept);
+                                pool.execute(manejador);
 			}
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+			
 		}
 		
 		
