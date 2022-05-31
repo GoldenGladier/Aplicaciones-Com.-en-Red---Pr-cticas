@@ -152,11 +152,21 @@ public class ServidorWeb1
                                             System.out.println(directoryName + req);
                                             
                                             File fichero = new File(directoryName + req);
-                                            String response;
-                                            if (fichero.delete())
-                                                response = "El fichero " + fichero.getName() + " ha sido eliminado satisfactoriamente";                                                
-                                            else
+                                            String response = "";
+                                            String title = "";
+                                            
+                                            if(fichero.getName().equals("index2.htm")){
+                                                title += "ERROR 403";
+                                                response = "El fichero " + fichero.getName() + " esta protegido y el servidor deniega la acción solicitada, página web o servicio.";                                                   
+                                            }
+                                            else if(fichero.delete()){
+                                                response = "El fichero " + fichero.getName() + " ha sido eliminado satisfactoriamente";   
+                                                title += "Archivo eliminado";
+                                            }
+                                            else{
                                                 response = "El fichero " + fichero.getName() + " no pudo ser eliminado, es probable que no exista en el servidor";
+                                                title += "ERROR 404";
+                                            }
                                             System.out.println(response);
                                             
                                             StringBuffer respuesta= new StringBuffer();
@@ -167,7 +177,7 @@ public class ServidorWeb1
                                             String tipo_mime = "Content-Type: text/html \n\n";
                                             respuesta.append(tipo_mime);
                                             respuesta.append("<html><head><title>SERVIDOR WEB</title></head>\n");
-                                            respuesta.append("<body bgcolor=\"#FFFFFF\"><center><h1><br>Recurso eliminado</br></h1><h3><b>\n");
+                                            respuesta.append("<body bgcolor=\"#FFFFFF\"><center><h1><br>" + title + "</br></h1><h3><b>\n");
                                             respuesta.append(response);
                                             respuesta.append("</b></h3>\n");
                                             respuesta.append("</center></body></html>\n\n");
@@ -216,7 +226,25 @@ public class ServidorWeb1
                                             dos.flush();
                                             dos.close();
                                             socket.close();                                            
-                                        }                                         
+                                        }      
+                                        else if(line.toUpperCase().startsWith("HEAD")){
+                                            System.out.println("PETICION HEAD CON");
+
+                                            StringBuffer respuesta= new StringBuffer();
+
+                                            respuesta.append("HTTP/1.0 200 Okay \n");
+                                            String fecha= "Date: " + new Date()+" \n";
+                                            respuesta.append(fecha);
+                                            String tipo_mime = "Content-Type: text/html \n\n";
+                                            respuesta.append(tipo_mime);
+    
+                                            System.out.println("Respuesta: "+respuesta);
+    
+                                            dos.write(respuesta.toString().getBytes());
+                                            dos.flush();
+                                            dos.close();
+                                            socket.close();                                          
+                                        }                                        
                                         else
 					{
 						dos.write("HTTP/1.0 501 Not Implemented\r\n".getBytes());
