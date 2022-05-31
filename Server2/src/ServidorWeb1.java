@@ -61,9 +61,6 @@ public class ServidorWeb1
 					}
 					System.out.println("\nCliente Conectado desde: "+socket.getInetAddress());
 					System.out.println("Por el puerto: "+socket.getPort());
-                                        System.out.println("=========== DATOS ===========");                                        
-//					System.out.println("Datos: "+peticion+"\r\n\r\n");
-                                        System.out.println("=============================");
                                         
 					StringTokenizer st1= new StringTokenizer(peticion,"\n");
                                         String line = st1.nextToken();
@@ -380,7 +377,7 @@ public class ServidorWeb1
                         System.out.println("\n\n Pool de Conexiones: " + TAM_POOL);
 			this.ss=new ServerSocket(PUERTO);
 			System.out.println("Servidor iniciado:---OK");
-                        URL myURL = new URL("http://127.0.0.1:" + PUERTO + "8000/");
+                        URL myURL = new URL("http://127.0.0.1:" + PUERTO);
                         System.out.println("Servidor en: " + myURL);
                         System.out.println(myURL);
 			System.out.println("Esperando por Cliente....");
