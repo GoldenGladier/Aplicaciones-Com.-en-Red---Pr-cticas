@@ -58,7 +58,12 @@ public class Practica06 {
                         request = new Respuesta();
                         System.out.println(statusLine.indexOf("?"));
                         String[] reqLineas = statusLine.split("\n");
-                        request.response( reqLineas[0], ch );
+                        if(reqLineas[0].startsWith("POST")){
+                            System.out.println("Soy post");
+                        }
+                        else{
+                            request.response( reqLineas[0], ch );
+                        }
                         ch.close();
                         continue;
                     }
