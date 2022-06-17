@@ -67,7 +67,7 @@ public class ServidorWeb1
                                         System.out.println("LINE: " + line);
 					if(line.indexOf("?")==-1 && line.toUpperCase().startsWith("GET"))
 					{
-                                                System.out.println("No se encontro '?'");
+                                                //System.out.println("No se encontro '?'");
 						getArch(line);
 						if(FileName.compareTo("")==0)
 						{
@@ -114,6 +114,7 @@ public class ServidorWeb1
                                             System.out.println("PETICION POST CON LOS PARAMETROS"); 
                                             StringTokenizer stokens = new StringTokenizer(peticion, "\n");
                                             String _line_ = stokens.nextToken();
+                                            System.out.println("line: "+ _line_);
                                             while ( !_line_.startsWith("Apellido") && stokens.hasMoreElements() ) {
                                                 _line_ = stokens.nextToken();                                         
                                             }
